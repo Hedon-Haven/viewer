@@ -387,13 +387,25 @@ class _AuthorPageScreenState extends State<AuthorPageScreen> {
                                         buildAuthorDetails(),
                                         if (isMobile) buildAuthorDescription(),
                                         buildActionButtonsRow(),
+                                      ])),
+                              FloatingDynamicSliverHeader(
+                                  pinned: true,
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.surface,
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      spacing: 10,
+                                      children: [
+                                        SizedBox(),
                                         Text(
                                             "Videos from ${authorPage?.name} on ${authorPage?.plugin?.prettyName}"
                                             "${authorPage?.videosTotal != null ? " (total: ${authorPage?.videosTotal})" : ""}: ",
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleSmall),
-                                        SizedBox(),
+                                        SizedBox()
                                       ])),
                               VideoList(
                                   videoList: authorVideos,
