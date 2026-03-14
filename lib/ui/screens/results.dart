@@ -48,13 +48,21 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return results;
   }
 
+  void popAllScreens() {
+    // Silently remove SearchScreen from the stack (no animation)
+    Navigator.of(context).removeRouteBelow(ModalRoute.of(context)!);
+    // Pop ResultsScreen with a single reverse animation directly to home
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
         canPop: false,
         onPopInvoked: (goingToPop) {
-          // Go back to home screen and clear navigation stack
-          Navigator.pushNamedAndRemoveUntil(context, "/", (route) => false);
+          if (!goingToPop) {
+            popAllScreens();
+          }
         },
         child: Scaffold(
             appBar: AppBar(
@@ -76,10 +84,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       color: Theme.of(context).colorScheme.surfaceVariant,
                       child: Row(children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                              context, "/", (route) => false),
-                        ),
+                            icon: const Icon(Icons.arrow_back),
+                            onPressed: () => popAllScreens()),
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(right: 15),

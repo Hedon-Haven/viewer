@@ -73,15 +73,20 @@ class _SearchScreenState extends State<SearchScreen> {
     LoadingHandler searchHandler = LoadingHandler();
     widget.previousSearch = query;
     Navigator.of(context)
-        .push(
-      MaterialPageRoute(
-        builder: (context) => ResultsScreen(
-          videoResults: searchHandler.getSearchResults(widget.previousSearch),
-          searchRequest: widget.previousSearch,
-          loadingHandler: searchHandler,
-        ),
-      ),
-    )
+        .push(PageRouteBuilder(
+            pageBuilder: (_, __, ___) => ResultsScreen(
+                  videoResults:
+                      searchHandler.getSearchResults(widget.previousSearch),
+                  searchRequest: widget.previousSearch,
+                  loadingHandler: searchHandler,
+                ),
+            transitionsBuilder: (_, animation, __, child) => SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                    parent: animation, curve: Curves.easeInOut)),
+                child: child)))
         .then((value) {
       _focusNode.requestFocus();
     }); // Bring up keyboard on return from results screen
