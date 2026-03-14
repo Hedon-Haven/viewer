@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
     reloadVideoListEvent.stream.listen((_) {
       sharedStorage.getBool("appearance_homepage_enabled").then((value) {
         if (value!) {
+          loadingHandler = LoadingHandler();
           videoResults = loadingHandler.getHomePages(null).whenComplete(() {
             logger.d("ResultsIssues Map: ${loadingHandler.resultsIssues}");
             // Update the scraping report button
