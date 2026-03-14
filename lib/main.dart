@@ -320,9 +320,21 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
                 _selectedIndex = index;
               });
             }),
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: screenList,
+        body: ClipRect(
+          child: Stack(
+            children: screenList
+                .asMap()
+                .entries
+                .map((entry) => AnimatedSlide(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      offset: entry.key == _selectedIndex
+                          ? Offset.zero
+                          : Offset(entry.key < _selectedIndex ? -1.0 : 1.0, 0),
+                      child: entry.value,
+                    ))
+                .toList(),
+          ),
         ));
   }
 }
