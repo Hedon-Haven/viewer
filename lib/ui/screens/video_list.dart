@@ -685,51 +685,54 @@ class _VideoListState extends State<VideoList> {
                 ])
               ],
               if (!widget.hideAuthors) ...[
-                TextButton(
-                    onPressed: videoList![index].authorID == null
-                        ? () => showToast(
-                            "${videoList![index].authorName}: Cant open author page (no authorID). "
-                            "Click the video and then try going to the author page from that screen",
-                            context,
-                            7)
-                        : () {
-                            Navigator.push(
+                OpenContainer(
+                    closedElevation: 0,
+                    openElevation: 0,
+                    closedColor: Colors.transparent,
+                    openColor: Theme.of(context).colorScheme.surface,
+                    transitionDuration: const Duration(milliseconds: 400),
+                    openBuilder: (context, _) => AuthorPageScreen(
+                        authorPage: videoList![index]
+                            .plugin!
+                            .getAuthorPage(videoList![index].authorID!)),
+                    closedBuilder: (context, openContainer) => TextButton(
+                        onPressed: videoList![index].authorID == null
+                            ? () => showToast(
+                                "${videoList![index].authorName}: Cant open author page (no authorID). "
+                                "Click the video and then try going to the author page from that screen",
                                 context,
-                                MaterialPageRoute(
-                                    builder: (context) => AuthorPageScreen(
-                                        authorPage: videoList![index]
-                                            .plugin!
-                                            .getAuthorPage(
-                                                videoList![index].authorID!))));
-                          },
-                    style: ButtonStyle(
-                      padding: WidgetStateProperty.all(
-                          EdgeInsets.symmetric(vertical: 5)),
-                      minimumSize: WidgetStateProperty.all(Size.zero),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Row(children: [
-                      Skeleton.shade(
-                          child: Stack(children: [
-                        Icon(
-                            color: Theme.of(context).colorScheme.secondary,
-                            Icons.person),
-                        videoList![index].verifiedAuthor
-                            ? const Positioned(
-                                right: -2,
-                                bottom: -2,
-                                child: Icon(
-                                    size: 14,
-                                    color: Colors.blue,
-                                    Icons.verified))
-                            : const SizedBox(),
-                      ])),
-                      const SizedBox(width: 5),
-                      Text(videoList![index].authorName ?? "Unknown author",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: smallTextStyle)
-                    ]))
+                                7)
+                            : () {
+                                openContainer();
+                              },
+                        style: ButtonStyle(
+                          padding: WidgetStateProperty.all(
+                              EdgeInsets.symmetric(vertical: 5)),
+                          minimumSize: WidgetStateProperty.all(Size.zero),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Row(children: [
+                          Skeleton.shade(
+                              child: Stack(children: [
+                            Icon(
+                                color: Theme.of(context).colorScheme.secondary,
+                                Icons.person),
+                            videoList![index].verifiedAuthor
+                                ? const Positioned(
+                                    right: -2,
+                                    bottom: -2,
+                                    child: Icon(
+                                        size: 14,
+                                        color: Colors.blue,
+                                        Icons.verified))
+                                : const SizedBox(),
+                          ])),
+                          const SizedBox(width: 5),
+                          Text(videoList![index].authorName ?? "Unknown author",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: smallTextStyle)
+                        ])))
               ]
             ])));
   }
