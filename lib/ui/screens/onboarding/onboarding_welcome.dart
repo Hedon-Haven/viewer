@@ -4,9 +4,7 @@ import 'package:page_transition/page_transition.dart';
 import 'onboarding_disclaimers.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  final void Function() setStateMain;
-
-  const WelcomeScreen({super.key, required this.setStateMain});
+  const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,13 +31,11 @@ class WelcomeScreen extends StatelessWidget {
                               backgroundColor:
                                   Theme.of(context).colorScheme.primary),
                           onPressed: () => Navigator.push(
-                                context,
-                                PageTransition(
-                                    type: PageTransitionType.rightToLeftJoined,
-                                    childCurrent: this,
-                                    child: DisclaimersScreen(
-                                        setStateMain: setStateMain)),
-                              ),
+                              context,
+                              PageTransition(
+                                  type: PageTransitionType.rightToLeftJoined,
+                                  childCurrent: this,
+                                  child: DisclaimersScreen())),
                           child: Text("Next",
                               style: Theme.of(context)
                                   .textTheme

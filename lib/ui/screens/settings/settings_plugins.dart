@@ -14,10 +14,8 @@ import '/utils/global_vars.dart';
 
 class PluginsScreen extends StatefulWidget {
   final bool partOfOnboarding;
-  final void Function()? setStateMain;
 
-  const PluginsScreen(
-      {super.key, this.partOfOnboarding = false, this.setStateMain});
+  const PluginsScreen({super.key, this.partOfOnboarding = false});
 
   @override
   State<PluginsScreen> createState() => _PluginsScreenState();
@@ -35,8 +33,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
           PageTransition(
               type: PageTransitionType.rightToLeftJoined,
               childCurrent: widget,
-              child: LauncherAppearance(
-                  partOfOnboarding: true, setStateMain: widget.setStateMain!)));
+              child: LauncherAppearance(partOfOnboarding: true)));
     } else {
       showDialog(
           context: context,
@@ -51,9 +48,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
                     PageTransition(
                         type: PageTransitionType.rightToLeftJoined,
                         childCurrent: widget,
-                        child: LauncherAppearance(
-                            partOfOnboarding: true,
-                            setStateMain: widget.setStateMain!))),
+                        child: LauncherAppearance(partOfOnboarding: true))),
                 content: Text(
                     "Are you sure you want to continue without enabling any plugins?"));
           });
@@ -178,9 +173,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
                                               type: PageTransitionType
                                                   .leftToRightJoined,
                                               childCurrent: widget,
-                                              child: DisclaimersScreen(
-                                                  setStateMain:
-                                                      widget.setStateMain!))),
+                                              child: DisclaimersScreen())),
                                       child: Text("Back",
                                           style: Theme.of(context)
                                               .textTheme

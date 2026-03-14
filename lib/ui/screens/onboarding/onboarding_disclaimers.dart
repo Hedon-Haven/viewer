@@ -5,9 +5,7 @@ import '/ui/screens/settings/settings_plugins.dart';
 import 'onboarding_welcome.dart';
 
 class DisclaimersScreen extends StatelessWidget {
-  final void Function() setStateMain;
-
-  const DisclaimersScreen({super.key, required this.setStateMain});
+  const DisclaimersScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -97,8 +95,7 @@ class DisclaimersScreen extends StatelessWidget {
                                         type: PageTransitionType
                                             .leftToRightJoined,
                                         childCurrent: this,
-                                        child: WelcomeScreen(
-                                            setStateMain: setStateMain))),
+                                        child: WelcomeScreen())),
                                 child: Text("Back",
                                     style: Theme.of(context)
                                         .textTheme
@@ -121,8 +118,7 @@ class DisclaimersScreen extends StatelessWidget {
                                             .rightToLeftJoined,
                                         childCurrent: this,
                                         child: PluginsScreen(
-                                            partOfOnboarding: true,
-                                            setStateMain: setStateMain))),
+                                            partOfOnboarding: true))),
                                 child: Text("Confirm",
                                     style: Theme.of(context)
                                         .textTheme

@@ -10,10 +10,8 @@ import '/utils/global_vars.dart';
 
 class LauncherAppearance extends StatefulWidget {
   final bool partOfOnboarding;
-  final void Function()? setStateMain;
 
-  const LauncherAppearance(
-      {super.key, this.partOfOnboarding = false, this.setStateMain});
+  const LauncherAppearance({super.key, this.partOfOnboarding = false});
 
   @override
   State<LauncherAppearance> createState() => _LauncherAppearanceScreenState();
@@ -199,9 +197,8 @@ class _LauncherAppearanceScreenState extends State<LauncherAppearance> {
                               PageTransition(
                                   type: PageTransitionType.leftToRightJoined,
                                   childCurrent: widget,
-                                  child: PluginsScreen(
-                                      partOfOnboarding: true,
-                                      setStateMain: widget.setStateMain!))),
+                                  child:
+                                      PluginsScreen(partOfOnboarding: true))),
                           child: Text("Back",
                               style: Theme.of(context)
                                   .textTheme
@@ -222,7 +219,7 @@ class _LauncherAppearanceScreenState extends State<LauncherAppearance> {
                             await sharedStorage.setBool(
                                 "general_onboarding_completed", true);
                             // Force redraw of main screen to exit onboarding
-                            widget.setStateMain!();
+                            globalSetState();
                             // Go back to main screen
                             await Navigator.pushNamedAndRemoveUntil(
                                 context, "/", (route) => false);

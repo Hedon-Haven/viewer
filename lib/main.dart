@@ -246,7 +246,7 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
                         return const SizedBox();
                       }
                       return !snapshotParent.data!
-                          ? WelcomeScreen(setStateMain: setStateMain)
+                          ? WelcomeScreen()
                           : FutureBuilder<String?>(
                               future: appearanceType,
                               builder: (context, snapshot) {
