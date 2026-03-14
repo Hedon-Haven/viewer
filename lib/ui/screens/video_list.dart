@@ -385,8 +385,9 @@ class _VideoListState extends State<VideoList> {
                                                       ? "Remove from favorites"
                                                       : "Add to favorites"),
                                                   onTap: () async {
-                                                    if (snapshot.data == null)
+                                                    if (snapshot.data == null) {
                                                       return;
+                                                    }
                                                     if (snapshot.data!) {
                                                       await removeFromFavorites(
                                                           videoList![index]);
