@@ -158,6 +158,7 @@ class _VideoListState extends State<VideoList> {
   }
 
   void loadVideoResults() async {
+    if (!mounted) return;
     setState(() => isLoadingResults = true);
     videoList = await widget.videoList;
     // If Connectivity contains ConnectivityResult.none -> no internet connection -> revert results
