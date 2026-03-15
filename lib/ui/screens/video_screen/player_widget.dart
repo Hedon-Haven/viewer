@@ -43,6 +43,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   Uint8List emptyImage = Uint8List(0);
   double progressThumbnailPosition = 0.0;
   String? videoPlayerError;
+  double dragOffsetY = 0.0;
 
   @override
   void initState() {
@@ -272,131 +273,145 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             // pass taps to elements below
             behavior: HitTestBehavior.translucent,
             onTap: showControlsOverlay,
-            // toggle fullscreen when user swipes down or up on video
-            // down only works in fullscreen
-            // up only works in non-fullscreen
-            // TODO: Add nice animation ala youtube app
+            onVerticalDragUpdate: (details) {
+              setState(() {
+                dragOffsetY = (dragOffsetY + details.delta.dy).clamp(
+                  widget.isFullScreen ? 0.0 : -maxDrag,
+                  widget.isFullScreen ? maxDrag : 0.0,
+                );
+              });
+            },
             onVerticalDragEnd: (details) {
-              if (details.velocity.pixelsPerSecond.dy *
-                      (widget.isFullScreen ? 1 : -1) >
-                  0) {
-                widget.toggleFullScreen.call();
-              }
+              final triggered = dragOffsetY.abs() >= maxDrag;
+              setState(() => dragOffsetY = 0.0);
+              if (triggered) widget.toggleFullScreen.call();
             },
             child: Stack(children: [
-              Container(
-                  color: Colors.black,
-                  child: SizedBox(
-                      height: MediaQuery.of(context).orientation ==
-                              Orientation.landscape
-                          ? MediaQuery.of(context).size.height
-                          : MediaQuery.of(context).size.width * 9 / 16,
-                      child: videoPlayerError != null
-                          ? buildErrorScreen()
-                          : Stack(
-                              alignment: Alignment.center,
-                              children: <Widget>[
-                                controller.value.isInitialized
-                                    // This makes the video 16:9 while loading -> skeleton looks weird otherwise
-                                    ? AspectRatio(
-                                        aspectRatio:
-                                            controller.value.isInitialized
-                                                ? controller.value.aspectRatio
-                                                : 16 / 9,
-                                        child: VideoPlayer(controller))
-                                    : const CircularProgressIndicator(
-                                        color: Colors.white),
-                                // gray background to make buttons more visible when overlay is on
-                                OverlayWidget(
-                                  showControls: showControls,
-                                  child: Container(
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    color: Colors.black.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                buildSkipWidget(),
-                                OverlayWidget(
-                                  showControls:
-                                      showControls && !hidePlayControls,
-                                  child: controller.value.isBuffering
-                                      ? const CircularProgressIndicator(
-                                          color: Colors.white,
-                                        )
-                                      : CircleAvatar(
-                                          radius: 28,
-                                          backgroundColor: Colors.black
-                                              .withValues(alpha: 0.2),
-                                          child: IconButton(
-                                            splashColor: Colors.transparent,
-                                            icon: Icon(
-                                              controller.value.isPlaying
-                                                  ? Icons.pause
-                                                  : Icons.play_arrow,
-                                              size: 40.0,
-                                              color: Colors.white,
-                                            ),
-                                            color: Colors.white,
-                                            onPressed: playPausePlayer,
+              OverflowBox(
+                  maxHeight: double.infinity,
+                  child: Transform.scale(
+                      scale: widget.isFullScreen
+                          ? 1.0 - (dragOffsetY.abs() / maxDrag) * 0.2
+                          : 1.0 + (dragOffsetY.abs() / maxDrag) * 0.2,
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                          color: Colors.black,
+                          child: SizedBox(
+                              height: MediaQuery.of(context).orientation ==
+                                      Orientation.landscape
+                                  ? MediaQuery.of(context).size.height
+                                  : MediaQuery.of(context).size.width * 9 / 16,
+                              child: videoPlayerError != null
+                                  ? buildErrorScreen()
+                                  : Stack(
+                                      alignment: Alignment.center,
+                                      children: <Widget>[
+                                        controller.value.isInitialized
+                                            // This makes the video 16:9 while loading -> skeleton looks weird otherwise
+                                            ? AspectRatio(
+                                                aspectRatio: controller
+                                                        .value.isInitialized
+                                                    ? controller
+                                                        .value.aspectRatio
+                                                    : 16 / 9,
+                                                child: VideoPlayer(controller))
+                                            : const CircularProgressIndicator(
+                                                color: Colors.white),
+                                        // gray background to make buttons more visible when overlay is on
+                                        OverlayWidget(
+                                          showControls: showControls,
+                                          child: Container(
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                            color: Colors.black
+                                                .withValues(alpha: 0.5),
                                           ),
                                         ),
-                                ),
-                                Positioned(
-                                    left: progressThumbnailPosition,
-                                    bottom: 50,
-                                    // TODO: Set size limits
-                                    child: OverlayWidget(
-                                        showControls: showControls,
-                                        child: showProgressThumbnail
-                                            ? widget.progressThumbnails != null
-                                                ? Image.memory(
-                                                    timelineProgressThumbnail,
-                                                    width: 160,
-                                                    height: 90)
-                                                : Container(
-                                                    color: Colors.black,
-                                                    width: 160,
-                                                    height: 90,
-                                                    child: const Center(
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                                color: Colors
-                                                                    .white)))
-                                            : const SizedBox())),
-                                Positioned(
-                                    top: 5,
-                                    right: 10,
-                                    child: buildQualityDropdown()),
-                                Positioned(
-                                  bottom: 5.0,
-                                  left: 20.0,
-                                  right: 0.0,
-                                  child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: <Widget>[
-                                        Expanded(
-                                          child: buildProgressBar(),
-                                        ),
+                                        buildSkipWidget(),
                                         OverlayWidget(
-                                            showControls: showControls,
-                                            child: IconButton(
-                                              icon: Icon(
-                                                widget.isFullScreen
-                                                    ? Icons.fullscreen_exit
-                                                    : Icons.fullscreen,
-                                                color: Colors.white,
-                                                size: 30.0,
-                                              ),
-                                              onPressed:
-                                                  widget.toggleFullScreen.call,
-                                            )),
-                                      ]),
-                                ),
-                              ],
-                            ))),
+                                          showControls:
+                                              showControls && !hidePlayControls,
+                                          child: controller.value.isBuffering
+                                              ? const CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                )
+                                              : CircleAvatar(
+                                                  radius: 28,
+                                                  backgroundColor: Colors.black
+                                                      .withValues(alpha: 0.2),
+                                                  child: IconButton(
+                                                    splashColor:
+                                                        Colors.transparent,
+                                                    icon: Icon(
+                                                      controller.value.isPlaying
+                                                          ? Icons.pause
+                                                          : Icons.play_arrow,
+                                                      size: 40.0,
+                                                      color: Colors.white,
+                                                    ),
+                                                    color: Colors.white,
+                                                    onPressed: playPausePlayer,
+                                                  ),
+                                                ),
+                                        ),
+                                        Positioned(
+                                            left: progressThumbnailPosition,
+                                            bottom: 50,
+                                            // TODO: Set size limits
+                                            child: OverlayWidget(
+                                                showControls: showControls,
+                                                child: showProgressThumbnail
+                                                    ? widget.progressThumbnails !=
+                                                            null
+                                                        ? Image.memory(
+                                                            timelineProgressThumbnail,
+                                                            width: 160,
+                                                            height: 90)
+                                                        : Container(
+                                                            color: Colors.black,
+                                                            width: 160,
+                                                            height: 90,
+                                                            child: const Center(
+                                                                child: CircularProgressIndicator(
+                                                                    color: Colors
+                                                                        .white)))
+                                                    : const SizedBox())),
+                                        Positioned(
+                                            top: 5,
+                                            right: 10,
+                                            child: buildQualityDropdown()),
+                                        Positioned(
+                                          bottom: 5.0,
+                                          left: 20.0,
+                                          right: 0.0,
+                                          child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: <Widget>[
+                                                Expanded(
+                                                  child: buildProgressBar(),
+                                                ),
+                                                OverlayWidget(
+                                                    showControls: showControls,
+                                                    child: IconButton(
+                                                      icon: Icon(
+                                                        widget.isFullScreen
+                                                            ? Icons
+                                                                .fullscreen_exit
+                                                            : Icons.fullscreen,
+                                                        color: Colors.white,
+                                                        size: 30.0,
+                                                      ),
+                                                      onPressed: widget
+                                                          .toggleFullScreen
+                                                          .call,
+                                                    )),
+                                              ]),
+                                        ),
+                                      ],
+                                    ))))),
               // overlay back button unless actively playing video
               if (!controller.value.isInitialized ||
                   showControls ||
