@@ -230,14 +230,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   void toggleFullScreen() {
-    // the windowManager is just for desktop. It wont interfere with mobile
     isFullScreen = !isFullScreen;
     if (isFullScreen) {
-      windowManager.setFullScreen(true);
+      if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+        windowManager.setFullScreen(true);
+      }
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
       AutoOrientation.landscapeAutoMode(forceSensor: true);
     } else {
-      windowManager.setFullScreen(false);
+      if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
+        windowManager.setFullScreen(false);
+      }
       // TODO: Get rid of visual bug due to system not resizing quick enough
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       AutoOrientation.portraitAutoMode();
