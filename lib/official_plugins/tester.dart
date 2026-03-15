@@ -315,14 +315,15 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
         avatar: "https://placehold.co/240x240.png",
         banner: "https://placehold.co/1270x400.png",
         aliases: ["Test alias 1", "Test alias 2"],
-        description: "Very long description" * 100,
+        description: "Very long description" * 1000,
         advancedDescription: {
-          "Test description key 1": "Test description value 1",
-          "Test description key 2": "Test description value 2"
+          for (int i = 1; i <= 1000; i++)
+            "Test description key $i": "Test description value $i",
         },
         externalLinks: {
           "external link 1": Uri.parse("https://example.com/link1"),
-          "external link 2": Uri.parse("https://example.com/link2")
+          "external link 2": Uri.parse("https://example.com/link2"),
+          "external link 3": Uri.parse("https://example.com/link3")
         },
         viewsTotal: 23773212,
         videosTotal: 114,
