@@ -39,7 +39,9 @@ class DeveloperScreen extends StatelessWidget {
                 onSecondary: () => Navigator.of(context).pop(null),
                 content: TextField(
                     controller: textController,
-                    decoration: InputDecoration(hintText: "e.g. v0.3.15"))));
+                    // hint with the current version
+                    decoration: InputDecoration(
+                        hintText: "e.g. v${packageInfo.version}"))));
       },
     );
 
