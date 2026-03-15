@@ -549,8 +549,8 @@ class _VideoListState extends State<VideoList> {
           // show video quality
           if (videoList![index].maxQuality != null) ...[
             Positioned(
-                left: 4.0,
-                bottom: 4.0,
+                left: 8,
+                bottom: 8,
                 child: Container(
                     padding: const EdgeInsets.only(left: 2.0, right: 2.0),
                     decoration: BoxDecoration(
@@ -569,8 +569,8 @@ class _VideoListState extends State<VideoList> {
                     )))
           ],
           Positioned(
-              right: 4.0,
-              bottom: 4.0,
+              right: 8,
+              bottom: 8,
               child: Container(
                   padding: const EdgeInsets.only(left: 2.0, right: 2.0),
                   decoration: BoxDecoration(
@@ -589,8 +589,8 @@ class _VideoListState extends State<VideoList> {
                               ? "${(videoList![index].duration!.inMinutes % 60).toString().padLeft(2, '0')}:${(videoList![index].duration!.inSeconds % 60).toString().padLeft(2, '0')}"
                               : "1h+"))),
           Positioned(
-              left: 4.0,
-              top: 4.0,
+              left: 8,
+              top: 8,
               child: Skeleton.replace(
                   child: !isLoadingResults
                       ? Image.file(
@@ -604,8 +604,8 @@ class _VideoListState extends State<VideoList> {
                       : const Placeholder())),
           if (widget.deleteVideo != null) ...[
             Positioned(
-                right: 4.0,
-                top: 4.0,
+                right: 0,
+                top: 0,
                 child: IconButton(
                     onPressed: isLoadingResults
                         ? null
@@ -623,8 +623,8 @@ class _VideoListState extends State<VideoList> {
               future: isInFavorites(videoList![index].iD),
               builder: (context, snapshot) {
                 return Positioned(
-                    right: 4.0,
-                    top: 4.0,
+                    right: 0,
+                    top: 0,
                     child: IconButton(
                       onPressed: () async {
                         if (snapshot.data == null) return;
@@ -643,14 +643,10 @@ class _VideoListState extends State<VideoList> {
                               color:
                                   Theme.of(context).colorScheme.surfaceVariant),
                           Icon(
-                            snapshot.data ?? false
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: Theme.of(context).colorScheme.primary,
-                            shadows: const [
-                              Shadow(color: Colors.black, blurRadius: 8)
-                            ],
-                          ),
+                              snapshot.data ?? false
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: Theme.of(context).colorScheme.primary),
                         ],
                       ),
                     ));
