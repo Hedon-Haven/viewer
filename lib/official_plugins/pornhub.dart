@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_js/flutter_js.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:image/image.dart';
@@ -1148,6 +1149,9 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
             ?.text
             .replaceAll("About:", "")
             .trim();
+      }
+      if (description != null) {
+        description = HtmlUnescape().convert(description);
       }
     } catch (e, stacktrace) {
       if (authorName == null) {
