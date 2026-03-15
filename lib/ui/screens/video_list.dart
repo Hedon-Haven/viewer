@@ -593,13 +593,19 @@ class _VideoListState extends State<VideoList> {
               top: 4.0,
               child: Skeleton.replace(
                   child: !isLoadingResults
-                      ? Image.file(
-                          File(
-                              "${cacheDir?.path}/${videoList![index].plugin?.codeName}"),
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.question_mark),
-                          width: 20,
-                          height: 20)
+                      ? DecoratedBox(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(color: Colors.black, blurRadius: 8)
+                            ],
+                          ),
+                          child: Image.file(
+                              File(
+                                  "${cacheDir?.path}/${videoList![index].plugin?.codeName}"),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.question_mark),
+                              width: 20,
+                              height: 20))
                       // TODO: Fix skeletonizer not showing
                       : const Placeholder())),
           if (widget.deleteVideo != null) ...[
@@ -636,11 +642,23 @@ class _VideoListState extends State<VideoList> {
                         // Rebuild the modal's UI
                         setState(() {});
                       },
-                      icon: Icon(
-                          snapshot.data ?? false
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: Theme.of(context).colorScheme.primary),
+                      icon: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(Icons.favorite,
+                              color:
+                                  Theme.of(context).colorScheme.surfaceVariant),
+                          Icon(
+                            snapshot.data ?? false
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: Theme.of(context).colorScheme.primary,
+                            shadows: const [
+                              Shadow(color: Colors.black, blurRadius: 8)
+                            ],
+                          ),
+                        ],
+                      ),
                     ));
               },
             )
