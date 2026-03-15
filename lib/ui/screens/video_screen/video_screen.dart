@@ -453,16 +453,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                              child: Text(
-                                  // Most videos result in a 2-line title, but mock usually displays only one causing jumps
-                                  isLoadingMetadata
-                                      ? "${videoMetadata.title}\n${videoMetadata.title}"
-                                      : videoMetadata.title,
-                                  style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: descriptionExpanded ? 10 : 2)),
+                              child: AnimatedSize(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeInOut,
+                                  alignment: Alignment.topLeft,
+                                  child: Text(
+                                      // Most videos result in a 2-line title, but mock usually displays only one causing jumps
+                                      isLoadingMetadata
+                                          ? "${videoMetadata.title}\n${videoMetadata.title}"
+                                          : videoMetadata.title,
+                                      style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: descriptionExpanded ? 10 : 2))),
                           Icon(
                             descriptionExpanded
                                 ? Icons.keyboard_arrow_up
@@ -473,10 +477,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         ],
                       )))),
           if (isMobile) buildMetadataSection(),
-          if (descriptionExpanded) ...[
-            Text(videoMetadata.description ?? "No description available",
-                style: Theme.of(context).textTheme.bodyMedium!),
-          ],
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topLeft,
+            child: descriptionExpanded
+                ? Text(videoMetadata.description ?? "No description available",
+                    style: Theme.of(context).textTheme.bodyMedium!)
+                : const SizedBox.shrink(),
+          ),
           isMobile
               ? buildAuthorPreview()
               : Row(
