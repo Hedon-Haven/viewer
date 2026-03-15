@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:animations/animations.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -157,85 +159,6 @@ class _AuthorPageScreenState extends State<AuthorPageScreen> {
               return Icon(Icons.error,
                   color: Theme.of(context).colorScheme.error);
             }, fit: BoxFit.contain))));
-  }
-
-  void buildAboutDialog() {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) => ThemedDialog(
-            title: "About author",
-            primaryText: "Close",
-            onPrimary: () => Navigator.pop(context),
-            // Force high minWidth to avoid popup looking too small on desktops
-            content: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: 1200),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Description:",
-                          style: Theme.of(context).textTheme.titleMedium),
-                      SizedBox(height: 5),
-                      Expanded(
-                          child: TextFormField(
-                              initialValue:
-                                  authorPage?.description ?? "No description",
-                              readOnly: true,
-                              maxLines: null,
-                              expands: true,
-                              style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface),
-                              textAlignVertical: TextAlignVertical.top,
-                              decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 10, horizontal: 10),
-                                  filled: true,
-                                  fillColor:
-                                      Theme.of(context).colorScheme.surface,
-                                  hoverColor:
-                                      Theme.of(context).colorScheme.surface))),
-                      SizedBox(height: 20),
-                      Text("Advanced description:",
-                          style: Theme.of(context).textTheme.titleMedium),
-                      SizedBox(height: 5),
-                      Expanded(
-                          child: TextFormField(
-                              initialValue: (() {
-                                if (authorPage?.advancedDescription?.isEmpty ??
-                                    true) {
-                                  return "No advanced description";
-                                }
-                                return authorPage!.advancedDescription!.entries
-                                    .map((e) => "${e.key}: ${e.value}")
-                                    .join("\n")
-                                    .trim();
-                              })(),
-                              readOnly: true,
-                              maxLines: null,
-                              expands: true,
-                              style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface),
-                              textAlignVertical: TextAlignVertical.top,
-                              decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 10, horizontal: 10),
-                                  filled: true,
-                                  fillColor:
-                                      Theme.of(context).colorScheme.surface,
-                                  hoverColor: Theme.of(context)
-                                      .colorScheme
-                                      .surface // disables hover effect
-                                  )))
-                    ]))));
   }
 
   @override
@@ -503,30 +426,111 @@ class _AuthorPageScreenState extends State<AuthorPageScreen> {
   }
 
   Widget buildAuthorDescription() {
-    return TextButton(
-        style: ButtonStyle(
-            padding: WidgetStateProperty.all(isMobile
-                ? EdgeInsets.zero
-                : EdgeInsets.symmetric(vertical: 15, horizontal: 5)),
-            shape: WidgetStateProperty.all(RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)))),
-        child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: 60),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(
-                flex: 95,
-                child: Text(
-                  authorPage?.description ?? "No description",
-                  style: Theme.of(context).textTheme.titleSmall,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  softWrap: true,
-                ),
-              ),
-              SizedBox(width: 20),
-              Icon(Icons.open_in_full)
-            ])),
-        onPressed: () => buildAboutDialog());
+    return OpenContainer(
+        closedElevation: 0,
+        openElevation: 0,
+        closedColor: Colors.transparent,
+        openColor: Theme.of(context).colorScheme.surface,
+        transitionDuration: const Duration(milliseconds: 400),
+        openBuilder: (context, _) => Scaffold(
+            appBar: AppBar(
+                title: const Text("About author"),
+                iconTheme: IconThemeData(
+                    color: Theme.of(context).colorScheme.primary)),
+            body: Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Description:",
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 5),
+                      Expanded(
+                          child: TextFormField(
+                              initialValue:
+                                  authorPage?.description ?? "No description",
+                              readOnly: true,
+                              maxLines: null,
+                              expands: true,
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                              textAlignVertical: TextAlignVertical.top,
+                              decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 10),
+                                  filled: true,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant,
+                                  hoverColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant))),
+                      const SizedBox(height: 20),
+                      Text("Advanced description:",
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 5),
+                      Expanded(
+                          child: TextFormField(
+                              initialValue: (() {
+                                if (authorPage?.advancedDescription?.isEmpty ??
+                                    true) {
+                                  return "No advanced description";
+                                }
+                                return authorPage!.advancedDescription!.entries
+                                    .map((e) => "${e.key}: ${e.value}")
+                                    .join("\n")
+                                    .trim();
+                              })(),
+                              readOnly: true,
+                              maxLines: null,
+                              expands: true,
+                              style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
+                              textAlignVertical: TextAlignVertical.top,
+                              decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 10),
+                                  filled: true,
+                                  fillColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant,
+                                  hoverColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant)))
+                    ]))),
+        closedBuilder: (context, openContainer) => TextButton(
+            style: ButtonStyle(
+                padding: WidgetStateProperty.all(isMobile
+                    ? EdgeInsets.zero
+                    : const EdgeInsets.symmetric(vertical: 15, horizontal: 5)),
+                shape: WidgetStateProperty.all(RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)))),
+            onPressed: openContainer,
+            child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 60),
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                          flex: 95,
+                          child: Text(
+                            authorPage?.description ?? "No description",
+                            style: Theme.of(context).textTheme.titleSmall,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: true,
+                          )),
+                      const SizedBox(width: 20),
+                      const Icon(Icons.open_in_full)
+                    ]))));
   }
 
   Widget buildActionButtonsRow() {
