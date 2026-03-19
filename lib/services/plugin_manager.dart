@@ -70,7 +70,7 @@ class PluginManager {
     });
   }
 
-  /// Discover all plugins and loading according to settings in sharedStorage
+  /// Discover all plugins and load according to settings in sharedStorage
   static Future<void> discoverAndLoadPlugins() async {
     logger.i("Discovering and loading plugins");
     // Set pluginsDir if not already set
