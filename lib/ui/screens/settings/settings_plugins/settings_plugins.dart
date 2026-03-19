@@ -294,7 +294,9 @@ class _PluginsScreenState extends State<PluginsScreen> {
                             : "This plugin is from an unaffiliated third party.")))),
             icon: Icon(
                 size: 30,
-                color: Theme.of(context).colorScheme.primary,
+                color: PluginManager.allPlugins[index].isOfficialPlugin
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.tertiary,
                 PluginManager.allPlugins[index].isOfficialPlugin
                     ? Icons.verified
                     : Icons.extension),
