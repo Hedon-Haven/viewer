@@ -331,7 +331,7 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
         .toList());
   }
 
-  // downloadThumbnail is implemented at the PluginBase level
+  // downloadThumbnail is implemented at the OfficialPlugin level
 
   @override
   Future<List<String>> getSearchSuggestions(String searchString,
@@ -522,7 +522,7 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     return metadata;
   }
 
-  // getProgressThumbnails is implemented at the PluginBase level
+  // getProgressThumbnails is implemented at the OfficialPlugin level
 
   @override
   Future<void> isolateGetProgressThumbnails(SendPort sendPort) async {
@@ -675,7 +675,7 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     }
   }
 
-  // cancelGetProgressThumbnails is implemented at the PluginBase level
+  // cancelGetProgressThumbnails is implemented at the OfficialPlugin level
 
   @override
   Future<Uri?> getCommentUriFromID(String commentID, String videoID) {

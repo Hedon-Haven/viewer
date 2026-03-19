@@ -82,7 +82,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     );
   }
 
-  // downloadThumbnail is implemented at the PluginBase level
+  // downloadThumbnail is implemented at the OfficialPlugin level
 
   @override
   Future<List<String>> getSearchSuggestions(String searchString,
@@ -171,7 +171,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     );
   }
 
-  // getProgressThumbnails is implemented at the PluginBase level
+  // getProgressThumbnails is implemented at the OfficialPlugin level
 
   @override
   Future<void> isolateGetProgressThumbnails(SendPort sendPort) async {
@@ -205,7 +205,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     resultsPort.send(completedProcessedImages);
   }
 
-  // cancelGetProgressThumbnails is implemented at the PluginBase level
+  // cancelGetProgressThumbnails is implemented at the OfficialPlugin level
 
   @override
   Future<Uri?> getCommentUriFromID(String commentID, String videoID) {
