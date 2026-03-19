@@ -29,7 +29,7 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   int initialHomePage = 1;
   @override
-  int initialSearchPage = 1;
+  int initialSearchResultsPage = 1;
   @override
   int initialCommentsPage = 1;
   @override

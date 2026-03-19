@@ -31,7 +31,7 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   @override
   int initialHomePage = 0;
   @override
-  int initialSearchPage = 1;
+  int initialSearchResultsPage = 1;
   @override
   int initialCommentsPage = 1;
   @override

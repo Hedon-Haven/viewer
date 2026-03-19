@@ -24,7 +24,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   int initialHomePage = 0;
   @override
-  int initialSearchPage = 0;
+  int initialSearchResultsPage = 0;
   @override
   int initialCommentsPage = 0;
   @override

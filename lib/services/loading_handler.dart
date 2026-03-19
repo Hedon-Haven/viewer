@@ -86,7 +86,7 @@ class LoadingHandler {
       for (var plugin in plugins) {
         resultsPageCounter[plugin] = searchRequest == null
             ? plugin.initialHomePage
-            : plugin.initialSearchPage;
+            : plugin.initialSearchResultsPage;
       }
     }
 

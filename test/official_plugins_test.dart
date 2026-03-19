@@ -200,21 +200,21 @@ void main() async {
         searchResults = [
           ...await plugin.getSearchResults(
               UniversalSearchRequest(searchString: "Art"),
-              plugin.initialSearchPage,
+              plugin.initialSearchResultsPage,
               (body) => File(
-                      "${dumpDir.path}/getSearchResults/${plugin.initialSearchPage}.html")
+                      "${dumpDir.path}/getSearchResults/${plugin.initialSearchResultsPage}.html")
                   .writeAsStringSync(body)),
           ...await plugin.getSearchResults(
               UniversalSearchRequest(searchString: "Art"),
-              plugin.initialSearchPage + 1,
+              plugin.initialSearchResultsPage + 1,
               (body) => File(
-                      "${dumpDir.path}/getSearchResults/${plugin.initialSearchPage + 1}.html")
+                      "${dumpDir.path}/getSearchResults/${plugin.initialSearchResultsPage + 1}.html")
                   .writeAsStringSync(body)),
           ...await plugin.getSearchResults(
               UniversalSearchRequest(searchString: "Art"),
-              plugin.initialSearchPage + 2,
+              plugin.initialSearchResultsPage + 2,
               (body) => File(
-                      "${dumpDir.path}/getSearchResults/${plugin.initialSearchPage + 2}.html")
+                      "${dumpDir.path}/getSearchResults/${plugin.initialSearchResultsPage + 2}.html")
                   .writeAsStringSync(body))
         ];
       });

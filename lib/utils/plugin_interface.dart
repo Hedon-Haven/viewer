@@ -40,7 +40,7 @@ class PluginInterface {
   int initialHomePage = 0;
 
   /// Initial search page number
-  int initialSearchPage = 0;
+  int initialSearchResultsPage = 0;
 
   /// Initial comment page number
   int initialCommentsPage = 0;
