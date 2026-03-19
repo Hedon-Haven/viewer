@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 
-import '/ui/screens/settings/settings_plugins.dart';
+import '/ui/screens/settings/settings_plugins/settings_plugins.dart';
 import 'onboarding_welcome.dart';
 
 class DisclaimersScreen extends StatelessWidget {

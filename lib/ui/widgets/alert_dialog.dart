@@ -30,6 +30,7 @@ class _ThemedAlertDialogState extends State<ThemedDialog> {
       backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
       title: widget.title == null ? null : Center(child: Text(widget.title!)),
       actionsAlignment: MainAxisAlignment.spaceEvenly,
+      actionsOverflowAlignment: OverflowBarAlignment.center,
       actions: <Widget>[
         if (widget.secondaryText != null && widget.onSecondary != null) ...[
           ElevatedButton(
