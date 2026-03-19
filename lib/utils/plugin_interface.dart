@@ -51,21 +51,6 @@ class PluginInterface {
   /// Initial video suggestions page number
   int initialAuthorVideosPage = 0;
 
-  /// Has a homepage
-  bool providesHomepage = false;
-
-  /// Provides search suggestions
-  bool providesSearchSuggestions = false;
-
-  /// Provides search results
-  bool providesResults = false;
-
-  /// Can return a video via a unique id
-  bool providesVideo = false;
-
-  /// Allows/Provides downloads
-  bool providesDownloads = false;
-
   // Internal variables
   /// The path to the root of the plugin
   // ignore: prefer_final_fields

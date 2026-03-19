@@ -38,16 +38,6 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   int initialVideoSuggestionsPage = 1;
   @override
   int initialAuthorVideosPage = 1;
-  @override
-  bool providesHomepage = true;
-  @override
-  bool providesSearchSuggestions = true;
-  @override
-  bool providesResults = true;
-  @override
-  bool providesVideo = true;
-  @override
-  bool providesDownloads = true;
 
   // The following fields are inherited from PluginInterface, but not needed due to this class not actually being an interface
   @override

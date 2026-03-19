@@ -31,16 +31,6 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   int initialVideoSuggestionsPage = 0;
   @override
   int initialAuthorVideosPage = 0;
-  @override
-  bool providesDownloads = true;
-  @override
-  bool providesHomepage = true;
-  @override
-  bool providesResults = true;
-  @override
-  bool providesSearchSuggestions = true;
-  @override
-  bool providesVideo = true;
 
   // The following fields are inherited from PluginInterface, but not needed due to this class not actually being an interface
   @override
