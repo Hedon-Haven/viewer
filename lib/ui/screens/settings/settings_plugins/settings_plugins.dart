@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 
@@ -6,6 +5,7 @@ import '/services/plugin_manager.dart';
 import '/ui/screens/bug_report.dart';
 import '/ui/screens/onboarding/onboarding_disclaimers.dart';
 import '/ui/screens/settings/settings_launcher_appearance.dart';
+import '/ui/screens/settings/settings_plugins/install_third_party_plugin.dart';
 import '/ui/utils/toast_notification.dart';
 import '/ui/widgets/alert_dialog.dart';
 import '/ui/widgets/options_switch.dart';
@@ -71,30 +71,33 @@ class _PluginsScreenState extends State<PluginsScreen> {
                   : const Text("Plugins"),
               actions: [
                 IconButton(
-                  icon: Icon(
-                      color: Theme.of(context).colorScheme.primary,
-                      Icons.download),
-                  onPressed: () async {
-                    showToast("Not yet fully implemented", context);
-                    return;
-
-                    if (!thirdPartyPluginWarningShown) {
-                      await showThirdPartyAlert();
-                    }
-                    // Check if user has accepted the warning in the prev showDialog
-                    if (thirdPartyPluginWarningShown) {
-                      logger.d("Prompting user to select a zip file");
-                      // Let the user pick a zip file
-                      Map<String, dynamic> plugin = await PluginManager()
-                          .extractPlugin(await FilePicker.platform.pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: ["zip"]));
-                      if (plugin["codeName"] == "Error") {
-                        showToast(plugin["error"], context, 10);
-                      } else {
-                        showPluginInstallOverview(plugin);
-                      }
-                    }
+                  icon: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(Icons.extension),
+                      Positioned(
+                        right: -8,
+                        bottom: -8,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Icon(Icons.circle,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.surface),
+                            Icon(Icons.add, size: 18),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                ThirdPartyPluginInstallScreen())).then((_) {
+                      setState(() {});
+                    });
                   },
                 ),
               ],
@@ -352,55 +355,5 @@ class _PluginsScreenState extends State<PluginsScreen> {
                 })
           ],
         ));
-  }
-
-  Future<void> showThirdPartyAlert() async {
-    await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return ThemedDialog(
-            title: "Third party notice",
-            primaryText: "Accept the risks and continue",
-            onPrimary: () {
-              // close popup
-              Navigator.pop(context);
-              thirdPartyPluginWarningShown = true;
-            },
-            secondaryText: "Cancel",
-            onSecondary: Navigator.of(context).pop,
-            content: const Text(
-                "Importing plugins from untrusted sources may put your device at risk! "
-                "The developers of Hedon Haven take no responsibility for any damage or "
-                "unintended consequences of using plugins from untrusted sources.",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          );
-        });
-  }
-
-  Future<void> showPluginInstallOverview(Map<String, dynamic> plugin) async {
-    await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return ThemedDialog(
-            title: "Import plugin",
-            primaryText: "Import plugin",
-            onPrimary: () {
-              setState(() {
-                PluginManager().importAndTestPlugin(
-                    plugin["tempPluginPath"], plugin["codeName"]);
-              });
-              // close popup
-              Navigator.pop(context);
-            },
-            secondaryText: "Cancel",
-            onSecondary: Navigator.of(context).pop,
-            content: Text("Are you sure you want to import this plugin?\n"
-                "\nProvider URL: ${plugin["providerUrl"]}"
-                "\nName: ${plugin["prettyName"]} (${plugin["codeName"]})"
-                "\nVersion: ${plugin["version"]}"
-                "\nDeveloper: ${plugin["developer"]}"
-                "\nDescription: ${plugin["description"]}"),
-          );
-        });
   }
 }
