@@ -51,7 +51,7 @@ class PluginManager {
 
   /// Recursive function to copy a directory into another
   /// Source: https://stackoverflow.com/a/76166248
-  void copyDirectory(Directory source, Directory destination) {
+  static void copyDirectory(Directory source, Directory destination) {
     /// create destination folder if not exist
     if (!destination.existsSync()) {
       destination.createSync(recursive: true);
@@ -307,7 +307,7 @@ class PluginManager {
     return null;
   }
 
-  Future<Map<String, dynamic>> extractPlugin(
+  static Future<Map<String, dynamic>> extractPlugin(
       FilePickerResult? pickedFile) async {
     try {
       // Create a temporary directory with random name to process the zip file
@@ -387,6 +387,7 @@ class PluginManager {
 
   Future<bool> importAndTestPlugin(
       String tempPluginPath, String pluginCodeName) async {
+  static Future<bool> testExternalPlugin(Directory pluginDir) async {
     // Create plugin dir
     Directory appSupportDir = await getApplicationSupportDirectory();
     Directory pluginDir =
@@ -430,6 +431,7 @@ class PluginManager {
         return false;
       }
     }
+  static Future<void> deletePlugin(PluginInterface plugin) async {
 
     // conf dir is optional
     if (Directory("$tempPluginPath/conf").existsSync()) {
