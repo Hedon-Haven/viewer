@@ -355,7 +355,21 @@ class _PluginsScreenState extends State<PluginsScreen> {
                         PluginManager.allPlugins[index], "search_suggestions");
                   }
                   setState(() {});
-                })
+                }),
+            if (!PluginManager.allPlugins[index].isOfficialPlugin)
+              ListTile(
+                  trailing: const Icon(Icons.delete_forever,
+                      size: 40, color: Colors.red),
+                  contentPadding: EdgeInsets.only(left: 16, right: 8),
+                  title: const Text("Delete third-party plugin"),
+                  subtitle: Text(
+                      "Permanently delete all plugin binaries and configs"),
+                  onTap: () async {
+                    await PluginManager.deletePlugin(
+                        PluginManager.allPlugins[index]);
+                    setState(() {});
+                    Navigator.of(context).pop();
+                  }),
           ],
         ));
   }
