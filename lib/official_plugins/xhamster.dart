@@ -300,33 +300,11 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  bool runFunctionalityTest() {
+  Future<bool> runFunctionalityTest() {
     // There is no need to run functionality tests on official plugins
     // as they are not imported at any time in the app
     // Also, these plugins get checked for functionality via daily CIs
-    return true;
-  }
-
-  // downloadThumbnail is implemented at the PluginBase level
-
-  @override
-  Future<List<String>> getSearchSuggestions(String searchString,
-      [void Function(String body)? debugCallback]) async {
-    List<String> parsedMap = [];
-    var response = await client.get(Uri.parse(
-        "https://xhamster.com/api/front/search/suggest?searchValue=$searchString"));
-    debugCallback?.call(response.body);
-    if (response.statusCode == 200) {
-      for (var item in jsonDecode(response.body).cast<Map>()) {
-        if (item["type2"] == "search") {
-          parsedMap.add(item["plainText"]);
-        }
-      }
-    } else {
-      throw Exception(
-          "Error downloading json list: ${response.statusCode} - ${response.reasonPhrase}");
-    }
-    return parsedMap;
+    return Future.value(true);
   }
 
   @override
@@ -351,6 +329,28 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
         .querySelector(".thumb-list")!
         .querySelectorAll('div[data-video-type="video"]')
         .toList());
+  }
+
+  // downloadThumbnail is implemented at the PluginBase level
+
+  @override
+  Future<List<String>> getSearchSuggestions(String searchString,
+      [void Function(String body)? debugCallback]) async {
+    List<String> parsedMap = [];
+    var response = await client.get(Uri.parse(
+        "https://xhamster.com/api/front/search/suggest?searchValue=$searchString"));
+    debugCallback?.call(response.body);
+    if (response.statusCode == 200) {
+      for (var item in jsonDecode(response.body).cast<Map>()) {
+        if (item["type2"] == "search") {
+          parsedMap.add(item["plainText"]);
+        }
+      }
+    } else {
+      throw Exception(
+          "Error downloading json list: ${response.statusCode} - ${response.reasonPhrase}");
+    }
+    return parsedMap;
   }
 
   @override
@@ -378,67 +378,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Future<List<UniversalVideoPreview>> getVideoSuggestions(
-      String videoID, Document rawHtml, int page,
-      [void Function(String body)? debugCallback]) async {
-    // find the video's relatedID in the json inside the html
-    String jscript = rawHtml.querySelector("#initials-script")!.text;
-    // use the relatedID from the related videos section specifically
-    int startIndex =
-        jscript.indexOf('"relatedVideosComponent":{"videoId":') + 36;
-    int endIndex = jscript.substring(startIndex).indexOf(',');
-    String relatedID = jscript.substring(startIndex, startIndex + endIndex);
-    logger.d("Video relatedID: $relatedID");
-
-    // Xhamster has an api
-    final suggestionsUri =
-        Uri.parse('https://xhamster.com/api/front/video/related'
-            '?params={"videoId":$relatedID,"page":$page,"nativeSpotsCount":1}');
-    print("Parsed URI: $suggestionsUri");
-    final response = await client.get(suggestionsUri);
-    if (response.statusCode != 200) {
-      throw Exception(
-          "Failed to get suggestions: ${response.statusCode} - ${response.reasonPhrase}");
-    }
-    debugCallback?.call(response.body);
-
-    List<UniversalVideoPreview> relatedVideos = [];
-    for (var result in jsonDecode(response.body)["videoThumbProps"]) {
-      String? title = tryParse(() => result["title"]);
-
-      UniversalVideoPreview relatedVideo = UniversalVideoPreview(
-        // Don't enforce null safety here
-        // treat error below in scrapeFailMessage instead
-        iD: tryParse(() => result["pageURL"].trim().split("/").last) ?? "null",
-        title: title ?? "null",
-        plugin: this,
-        thumbnail: result["thumbURL"],
-        previewVideo: tryParse<Uri?>(() => Uri.parse(result["trailerURL"])),
-        duration: tryParse(() => Duration(seconds: result["duration"])),
-        viewsTotal: result["views"],
-        ratingsPositivePercent: null,
-        maxQuality: tryParse<int?>(() => result["isUHD"] != null ? 2160 : null),
-        virtualReality: null,
-        authorName: result["landing"]?["name"] ?? "Unknown amateur author",
-        authorID: result["landing"]?["link"]
-            ?.replaceAll("/videos", "")
-            ?.split("/")
-            ?.last,
-        verifiedAuthor: result["landing"]?["name"] != null,
-      );
-
-      // This will also set the scrapeFailMessage if needed
-      relatedVideo.verifyScrapedData(
-          codeName, testingMap["ignoreScrapedErrors"]["videoSuggestions"]);
-
-      if (title == null) {
-        relatedVideo.scrapeFailMessage =
-            "Error: Failed to scrape critical variable: title";
-      }
-
-      relatedVideos.add(relatedVideo);
-    }
-    return relatedVideos;
+  Uri? getVideoUriFromID(String videoID) {
+    return Uri.parse(_videoEndpoint + videoID);
   }
 
   @override
@@ -580,6 +521,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
 
     return metadata;
   }
+
+  // getProgressThumbnails is implemented at the PluginBase level
 
   @override
   Future<void> isolateGetProgressThumbnails(SendPort sendPort) async {
@@ -732,6 +675,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     }
   }
 
+  // cancelGetProgressThumbnails is implemented at the PluginBase level
+
   @override
   Future<Uri?> getCommentUriFromID(String commentID, String videoID) {
     // Pornhub doesn't have comment links
@@ -838,8 +783,101 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Uri? getVideoUriFromID(String videoID) {
-    return Uri.parse(_videoEndpoint + videoID);
+  Future<List<UniversalVideoPreview>> getVideoSuggestions(
+      String videoID, Document rawHtml, int page,
+      [void Function(String body)? debugCallback]) async {
+    // find the video's relatedID in the json inside the html
+    String jscript = rawHtml.querySelector("#initials-script")!.text;
+    // use the relatedID from the related videos section specifically
+    int startIndex =
+        jscript.indexOf('"relatedVideosComponent":{"videoId":') + 36;
+    int endIndex = jscript.substring(startIndex).indexOf(',');
+    String relatedID = jscript.substring(startIndex, startIndex + endIndex);
+    logger.d("Video relatedID: $relatedID");
+
+    // Xhamster has an api
+    final suggestionsUri =
+        Uri.parse('https://xhamster.com/api/front/video/related'
+            '?params={"videoId":$relatedID,"page":$page,"nativeSpotsCount":1}');
+    print("Parsed URI: $suggestionsUri");
+    final response = await client.get(suggestionsUri);
+    if (response.statusCode != 200) {
+      throw Exception(
+          "Failed to get suggestions: ${response.statusCode} - ${response.reasonPhrase}");
+    }
+    debugCallback?.call(response.body);
+
+    List<UniversalVideoPreview> relatedVideos = [];
+    for (var result in jsonDecode(response.body)["videoThumbProps"]) {
+      String? title = tryParse(() => result["title"]);
+
+      UniversalVideoPreview relatedVideo = UniversalVideoPreview(
+        // Don't enforce null safety here
+        // treat error below in scrapeFailMessage instead
+        iD: tryParse(() => result["pageURL"].trim().split("/").last) ?? "null",
+        title: title ?? "null",
+        plugin: this,
+        thumbnail: result["thumbURL"],
+        previewVideo: tryParse<Uri?>(() => Uri.parse(result["trailerURL"])),
+        duration: tryParse(() => Duration(seconds: result["duration"])),
+        viewsTotal: result["views"],
+        ratingsPositivePercent: null,
+        maxQuality: tryParse<int?>(() => result["isUHD"] != null ? 2160 : null),
+        virtualReality: null,
+        authorName: result["landing"]?["name"] ?? "Unknown amateur author",
+        authorID: result["landing"]?["link"]
+            ?.replaceAll("/videos", "")
+            ?.split("/")
+            ?.last,
+        verifiedAuthor: result["landing"]?["name"] != null,
+      );
+
+      // This will also set the scrapeFailMessage if needed
+      relatedVideo.verifyScrapedData(
+          codeName, testingMap["ignoreScrapedErrors"]["videoSuggestions"]);
+
+      if (title == null) {
+        relatedVideo.scrapeFailMessage =
+            "Error: Failed to scrape critical variable: title";
+      }
+
+      relatedVideos.add(relatedVideo);
+    }
+    return relatedVideos;
+  }
+
+  @override
+  Future<Uri?> getAuthorUriFromID(String authorID) async {
+    logger.i("Getting author page URL of: $authorID");
+
+    // Assume every author is a channel at first
+    Uri authorPageLink = Uri.parse("$_channelEndpoint$authorID");
+
+    logger.d("Checking http status of: $authorPageLink");
+    var response = await client.head(authorPageLink);
+    if (response.statusCode != 200) {
+      // Try again for creator author type
+      authorPageLink = Uri.parse("$_creatorEndpoint$authorID");
+
+      logger.d(
+          "Received non 200 status code -> Requesting creator page: $authorPageLink");
+      response = await client.head(authorPageLink);
+
+      if (response.statusCode != 200) {
+        // Try again for user author type
+        authorPageLink = Uri.parse("$_userEndpoint$authorID");
+        logger.d(
+            "Received non 200 status code -> Requesting user page: $authorPageLink");
+        response = await client.get(authorPageLink);
+        if (response.statusCode != 200) {
+          logger.e(
+              "Error downloading html (tried channel, creator, user): ${response.statusCode} - ${response.reasonPhrase}");
+          throw Exception(
+              "Error downloading html (tried channel, creator, user): ${response.statusCode} - ${response.reasonPhrase}");
+        }
+      }
+    }
+    return authorPageLink;
   }
 
   @override
@@ -1080,40 +1118,6 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
         codeName, testingMap["ignoreScrapedErrors"]["authorPage"]);
 
     return authorPage;
-  }
-
-  @override
-  Future<Uri?> getAuthorUriFromID(String authorID) async {
-    logger.i("Getting author page URL of: $authorID");
-
-    // Assume every author is a channel at first
-    Uri authorPageLink = Uri.parse("$_channelEndpoint$authorID");
-
-    logger.d("Checking http status of: $authorPageLink");
-    var response = await client.head(authorPageLink);
-    if (response.statusCode != 200) {
-      // Try again for creator author type
-      authorPageLink = Uri.parse("$_creatorEndpoint$authorID");
-
-      logger.d(
-          "Received non 200 status code -> Requesting creator page: $authorPageLink");
-      response = await client.head(authorPageLink);
-
-      if (response.statusCode != 200) {
-        // Try again for user author type
-        authorPageLink = Uri.parse("$_userEndpoint$authorID");
-        logger.d(
-            "Received non 200 status code -> Requesting user page: $authorPageLink");
-        response = await client.get(authorPageLink);
-        if (response.statusCode != 200) {
-          logger.e(
-              "Error downloading html (tried channel, creator, user): ${response.statusCode} - ${response.reasonPhrase}");
-          throw Exception(
-              "Error downloading html (tried channel, creator, user): ${response.statusCode} - ${response.reasonPhrase}");
-        }
-      }
-    }
-    return authorPageLink;
   }
 
   @override

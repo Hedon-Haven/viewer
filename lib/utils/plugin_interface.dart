@@ -148,15 +148,20 @@ class PluginInterface {
   }
 
   /// Test full plugin functionality and return false if it fails
-  bool runFunctionalityTest() {
-    Map<String, dynamic> testResults = {"success": false};
+  //TODO: Set up proper Map<String, dynamic> testResults
+  Future<bool> runFunctionalityTest() async {
     try {
       _runPlugin("runInitTest", {}).then((value) => testResults = value);
     } catch (e) {
       logger.i("Init test failed with: $e");
       return false;
     }
-    return testResults["success"];
+  }
+
+  /// Return the homepage
+  Future<List<UniversalVideoPreview>> getHomePage(int page,
+      [void Function(String body)? debugCallback]) async {
+    throw UnimplementedError();
   }
 
   /// This function returns the requested thumbnail as a blob
@@ -170,12 +175,6 @@ class PluginInterface {
     throw UnimplementedError();
   }
 
-  /// Return the homepage
-  Future<List<UniversalVideoPreview>> getHomePage(int page,
-      [void Function(String body)? debugCallback]) async {
-    throw UnimplementedError();
-  }
-
   /// Return list of search results
   Future<List<UniversalVideoPreview>> getSearchResults(
       UniversalSearchRequest sr, int page,
@@ -183,10 +182,7 @@ class PluginInterface {
     throw UnimplementedError();
   }
 
-  /// Get video suggestions for a video, per page
-  Future<List<UniversalVideoPreview>> getVideoSuggestions(
-      String videoID, Document rawHtml, int page,
-      [void Function(String body)? debugCallback]) {
+  Uri? getVideoUriFromID(String videoID) {
     throw UnimplementedError();
   }
 
@@ -198,13 +194,17 @@ class PluginInterface {
     throw UnimplementedError();
   }
 
-  Uri? getVideoUriFromID(String videoID) {
-    throw UnimplementedError();
-  }
-
   /// Get all progressThumbnails for a video and return them as a List
   Future<List<Uint8List>?> getProgressThumbnails(
       String videoID, Document rawHtml) {
+    throw UnimplementedError();
+  }
+
+  void cancelGetProgressThumbnails() {
+    throw UnimplementedError();
+  }
+
+  Future<Uri?> getCommentUriFromID(String commentID, String videoID) async {
     throw UnimplementedError();
   }
 
@@ -212,6 +212,17 @@ class PluginInterface {
   Future<List<UniversalComment>> getComments(
       String videoID, Document rawHtml, int page,
       [void Function(String body)? debugCallback]) {
+    throw UnimplementedError();
+  }
+
+  /// Get video suggestions for a video, per page
+  Future<List<UniversalVideoPreview>> getVideoSuggestions(
+      String videoID, Document rawHtml, int page,
+      [void Function(String body)? debugCallback]) {
+    throw UnimplementedError();
+  }
+
+  Future<Uri?> getAuthorUriFromID(String authorID) async {
     throw UnimplementedError();
   }
 
@@ -226,15 +237,4 @@ class PluginInterface {
       [void Function(String body)? debugCallback]) {
     throw UnimplementedError();
   }
-
-  Future<Uri?> getAuthorUriFromID(String authorID) async {
-    throw UnimplementedError();
-  }
-
-  Future<Uri?> getCommentUriFromID(String commentID, String videoID) async {
-    throw UnimplementedError();
-  }
-
-  // These functions are primarily for canceling isolates
-
 }

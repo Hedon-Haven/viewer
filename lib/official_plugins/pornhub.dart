@@ -433,37 +433,11 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  bool runFunctionalityTest() {
+  Future<bool> runFunctionalityTest() {
     // There is no need to run functionality tests on official plugins
     // as they are not imported at any time in the app
     // Also, these plugins get checked for functionality via daily CIs
-    return true;
-  }
-
-  // downloadThumbnail is implemented at the PluginBase level
-
-  @override
-  Future<List<String>> getSearchSuggestions(String searchString,
-      [void Function(String body)? debugCallback]) async {
-    logger.d("Getting search suggestions for $searchString");
-    final Uri requestUri = Uri.parse(
-        "https://www.pornhub.com/api/v1/video/search_autocomplete?token=${_sessionCookies["token"]}&q=$searchString");
-    logger
-        .d("Request URI: $requestUri with ss cookie: ${_sessionCookies["ss"]}");
-    final response = await _performGetRequest(requestUri,
-        headers: {"Cookie": "ss=${_sessionCookies["ss"]}"});
-    debugCallback?.call(response.body);
-    Map<String, dynamic> data = jsonDecode(response.body);
-    // The search results are just returned as key value pairs of numbers
-    // e.g. {"0": "suggestion1", "1": "suggestion2", "2": "suggestion3"}
-    // combine them into a simple list
-    List<String> suggestions = [];
-    data.forEach((key, value) {
-      if (key != "isDdBannedWord" && key != "popularSearches") {
-        suggestions.add(value);
-      }
-    });
-    return suggestions;
+    return Future.value(true);
   }
 
   @override
@@ -522,6 +496,32 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
     return _parseVideoList(resultsList);
   }
 
+  // downloadThumbnail is implemented at the PluginBase level
+
+  @override
+  Future<List<String>> getSearchSuggestions(String searchString,
+      [void Function(String body)? debugCallback]) async {
+    logger.d("Getting search suggestions for $searchString");
+    final Uri requestUri = Uri.parse(
+        "https://www.pornhub.com/api/v1/video/search_autocomplete?token=${_sessionCookies["token"]}&q=$searchString");
+    logger
+        .d("Request URI: $requestUri with ss cookie: ${_sessionCookies["ss"]}");
+    final response = await _performGetRequest(requestUri,
+        headers: {"Cookie": "ss=${_sessionCookies["ss"]}"});
+    debugCallback?.call(response.body);
+    Map<String, dynamic> data = jsonDecode(response.body);
+    // The search results are just returned as key value pairs of numbers
+    // e.g. {"0": "suggestion1", "1": "suggestion2", "2": "suggestion3"}
+    // combine them into a simple list
+    List<String> suggestions = [];
+    data.forEach((key, value) {
+      if (key != "isDdBannedWord" && key != "popularSearches") {
+        suggestions.add(value);
+      }
+    });
+    return suggestions;
+  }
+
   @override
   Future<List<UniversalVideoPreview>> getSearchResults(
       UniversalSearchRequest request, int page,
@@ -575,20 +575,8 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Future<List<UniversalVideoPreview>> getVideoSuggestions(
-      String videoID, Document rawHtml, int page,
-      [void Function(String body)? debugCallback]) async {
-    // Pornhub doesn't allow loading more suggestions
-    if (page > 1) {
-      debugCallback?.call("Pornhub doesn't allow loading more suggestions");
-      return Future.value([]);
-    }
-    debugCallback?.call(rawHtml.outerHtml);
-    // Filter out ads and non-video results
-    return await _parseVideoList(rawHtml
-        .querySelector("#relatedVideos")!
-        .querySelectorAll('li[data-video-vkey]')
-        .toList());
+  Uri? getVideoUriFromID(String videoID) {
+    return Uri.parse(_videoEndpoint + videoID);
   }
 
   @override
@@ -744,6 +732,8 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
     return metadata;
   }
 
+  // getProgressThumbnails is implemented at the PluginBase level
+
   @override
   Future<void> isolateGetProgressThumbnails(SendPort sendPort) async {
     // Receive data from the main isolate
@@ -846,6 +836,8 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
       resultsPort.send(null);
     }
   }
+
+  // cancelGetProgressThumbnails is implemented at the PluginBase level
 
   @override
   Future<Uri?> getCommentUriFromID(String commentID, String videoID) {
@@ -1023,8 +1015,58 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Uri? getVideoUriFromID(String videoID) {
-    return Uri.parse(_videoEndpoint + videoID);
+  Future<List<UniversalVideoPreview>> getVideoSuggestions(
+      String videoID, Document rawHtml, int page,
+      [void Function(String body)? debugCallback]) async {
+    // Pornhub doesn't allow loading more suggestions
+    if (page > 1) {
+      debugCallback?.call("Pornhub doesn't allow loading more suggestions");
+      return Future.value([]);
+    }
+    debugCallback?.call(rawHtml.outerHtml);
+    // Filter out ads and non-video results
+    return await _parseVideoList(rawHtml
+        .querySelector("#relatedVideos")!
+        .querySelectorAll('li[data-video-vkey]')
+        .toList());
+  }
+
+  @override
+  Future<Uri?> getAuthorUriFromID(String authorID) async {
+    logger.i("Getting author page URL of: $authorID");
+
+    // Assume every author is a channel at first
+    Uri authorPageLink = Uri.parse("$_channelEndpoint$authorID");
+
+    logger.d("Checking http status of: $authorPageLink");
+    var response = await client.head(authorPageLink,
+        headers: {"Cookie": "KEY=${_sessionCookies["KEY"]}"});
+    if (response.statusCode != 200) {
+      // Try again for model author type
+      authorPageLink = Uri.parse("$_modelEndpoint$authorID");
+
+      logger.d(
+          "Received non 200 status code -> Requesting user page: $authorPageLink");
+      response = await client.head(authorPageLink,
+          headers: {"Cookie": "KEY=${_sessionCookies["KEY"]}"});
+
+      // make sure pornhub didn't redirect to the all pornstars page
+      if (response.body.contains("Most Popular Pornstars And Models")) {
+        authorPageLink = Uri.parse("$_pornstarEndpoint$authorID");
+        logger.d("Detected redirect to all pornstars page, trying again with "
+            "pornstar model endpoint: $authorPageLink");
+        response = await client.head(authorPageLink,
+            headers: {"Cookie": "KEY=${_sessionCookies["KEY"]}"});
+      }
+
+      if (response.statusCode != 200) {
+        logger.e(
+            "Error downloading html (tried both user and channel): ${response.statusCode} - ${response.reasonPhrase}");
+        throw Exception(
+            "Error downloading html (tried both user and channel): ${response.statusCode} - ${response.reasonPhrase}");
+      }
+    }
+    return authorPageLink;
   }
 
   @override
@@ -1264,44 +1306,6 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
         codeName, testingMap["ignoreScrapedErrors"]["authorPage"]);
 
     return authorPage;
-  }
-
-  @override
-  Future<Uri?> getAuthorUriFromID(String authorID) async {
-    logger.i("Getting author page URL of: $authorID");
-
-    // Assume every author is a channel at first
-    Uri authorPageLink = Uri.parse("$_channelEndpoint$authorID");
-
-    logger.d("Checking http status of: $authorPageLink");
-    var response = await client.head(authorPageLink,
-        headers: {"Cookie": "KEY=${_sessionCookies["KEY"]}"});
-    if (response.statusCode != 200) {
-      // Try again for model author type
-      authorPageLink = Uri.parse("$_modelEndpoint$authorID");
-
-      logger.d(
-          "Received non 200 status code -> Requesting user page: $authorPageLink");
-      response = await client.head(authorPageLink,
-          headers: {"Cookie": "KEY=${_sessionCookies["KEY"]}"});
-
-      // make sure pornhub didn't redirect to the all pornstars page
-      if (response.body.contains("Most Popular Pornstars And Models")) {
-        authorPageLink = Uri.parse("$_pornstarEndpoint$authorID");
-        logger.d("Detected redirect to all pornstars page, trying again with "
-            "pornstar model endpoint: $authorPageLink");
-        response = await client.head(authorPageLink,
-            headers: {"Cookie": "KEY=${_sessionCookies["KEY"]}"});
-      }
-
-      if (response.statusCode != 200) {
-        logger.e(
-            "Error downloading html (tried both user and channel): ${response.statusCode} - ${response.reasonPhrase}");
-        throw Exception(
-            "Error downloading html (tried both user and channel): ${response.statusCode} - ${response.reasonPhrase}");
-      }
-    }
-    return authorPageLink;
   }
 
   @override

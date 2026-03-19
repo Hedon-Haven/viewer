@@ -44,6 +44,16 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   // There is no need to override the testingMap, as this tester plugin wont fail to scrape anything
 
   @override
+  Future<bool> initPlugin([void Function(String body)? debugCallback]) {
+    return Future.value(true);
+  }
+
+  @override
+  Future<bool> runFunctionalityTest() {
+    return Future.value(true);
+  }
+
+  @override
   Future<List<UniversalVideoPreview>> getHomePage(int page,
       [void Function(String body)? debugCallback]) async {
     // Simulate a delay without blocking the entire app
@@ -70,6 +80,16 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
         scrapeFailMessage: index % 4 != 0 ? "Test fail scrape message" : null,
       ),
     );
+  }
+
+  // downloadThumbnail is implemented at the PluginBase level
+
+  @override
+  Future<List<String>> getSearchSuggestions(String searchString,
+      [void Function(String body)? debugCallback]) async {
+    // Simulate a delay without blocking the entire app
+    if (_simulateDelays) await Future.delayed(Duration(milliseconds: 200));
+    return List.generate(30, (index) => "$searchString-$index");
   }
 
   @override
@@ -100,6 +120,11 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
         scrapeFailMessage: index % 4 != 0 ? "Test fail scrape message" : null,
       ),
     );
+  }
+
+  @override
+  Uri? getVideoUriFromID(String videoID) {
+    return Uri.parse("https://example.com/$videoID");
   }
 
   @override
@@ -146,6 +171,8 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     );
   }
 
+  // getProgressThumbnails is implemented at the PluginBase level
+
   @override
   Future<void> isolateGetProgressThumbnails(SendPort sendPort) async {
     // Receive data from the main isolate
@@ -178,23 +205,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     resultsPort.send(completedProcessedImages);
   }
 
-  @override
-  Future<List<String>> getSearchSuggestions(String searchString,
-      [void Function(String body)? debugCallback]) async {
-    // Simulate a delay without blocking the entire app
-    if (_simulateDelays) await Future.delayed(Duration(milliseconds: 200));
-    return List.generate(30, (index) => "$searchString-$index");
-  }
-
-  @override
-  Future<bool> initPlugin([void Function(String body)? debugCallback]) {
-    return Future.value(true);
-  }
-
-  @override
-  bool runFunctionalityTest() {
-    return true;
-  }
+  // cancelGetProgressThumbnails is implemented at the PluginBase level
 
   @override
   Future<Uri?> getCommentUriFromID(String commentID, String videoID) {
@@ -268,7 +279,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     if (_simulateDelays) await Future.delayed(Duration(seconds: 2));
     return List.generate(
       50,
-      (index) => UniversalVideoPreview(
+          (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
         title: "Test suggestion video $index",
         plugin: this,
@@ -278,7 +289,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
         duration: Duration(seconds: 120 + index * 10),
         viewsTotal: (index * pi * 1000000).toInt(),
         ratingsPositivePercent:
-            int.tryParse((index * pi * 10000).toStringAsFixed(2)) ?? 50,
+        int.tryParse((index * pi * 10000).toStringAsFixed(2)) ?? 50,
         maxQuality: 720,
         virtualReality: false,
         authorName: "Tester-suggestion-author $index",
@@ -291,8 +302,8 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Uri? getVideoUriFromID(String videoID) {
-    return Uri.parse("https://example.com/$videoID");
+  Future<Uri?> getAuthorUriFromID(String authorID) {
+    return Future.value(Uri.parse("https://example.com/$authorID"));
   }
 
   @override
@@ -320,11 +331,6 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
         subscribers: 573529,
         rank: 3746,
         rawHtml: Document()));
-  }
-
-  @override
-  Future<Uri?> getAuthorUriFromID(String authorID) {
-    return Future.value(Uri.parse("https://example.com/$authorID"));
   }
 
   @override
