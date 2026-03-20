@@ -106,8 +106,8 @@ Future<void> createDefaultTables() async {
   await _database.execute('''
         CREATE TABLE watch_history (
           db_id INTEGER PRIMARY KEY,
-          iD TEXT,
-          title TEXT,
+          iD TEXT NOT NULL,
+          title TEXT NOT NULL,
           plugin TEXT,
           thumbnailBinary BLOB,
           duration INTEGER,
@@ -154,9 +154,9 @@ Future<void> createDefaultTables() async {
   await _database.execute('''
         CREATE TABLE favorites (
           db_id INTEGER PRIMARY KEY,
-          iD TEXT,
-          title TEXT,
-          plugin TEXT,
+          iD TEXT NOT NULL,
+          title TEXT NOT NULL,
+          plugin TEXT NOT NULL,
           thumbnailBinary BLOB,
           duration INTEGER,
           maxQuality INTEGER,
