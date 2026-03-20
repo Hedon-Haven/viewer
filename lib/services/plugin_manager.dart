@@ -126,7 +126,7 @@ class PluginManager {
         Directory cacheDir =
             Directory("${cachePath.path}/plugins/${plugin.codeName}");
         if (!cacheDir.existsSync()) {
-          cacheDir.create(recursive: true);
+          cacheDir.createSync(recursive: true);
         }
       }
       if (enabledResultsProvidersFromSettings.contains(plugin.codeName)) {
@@ -177,15 +177,12 @@ class PluginManager {
           enabledSearchSuggestionsProvidersFromSettings
               .contains(tempPlugin.codeName)) {
         enabledPlugins.add(tempPlugin);
-        // create a separate cache dir for each plugin and symlink it to the plugin dir
         Directory cacheDir =
             Directory("${cachePath.path}/plugins/${tempPlugin.codeName}");
-        if (cacheDir.existsSync()) {
-          cacheDir.deleteSync(recursive: true);
+        if (!cacheDir.existsSync()) {
+          cacheDir.createSync(recursive: true);
         }
-        cacheDir.createSync(recursive: true);
-        Link("${dir.path}/cache")
-            .createSync("${cachePath.path}/plugins/${tempPlugin.codeName}");
+        // TODO: Pass cache path to plugin somehow
       }
       if (enabledResultsProvidersFromSettings.contains(tempPlugin.codeName)) {
         enabledResultsProviders.add(tempPlugin);
