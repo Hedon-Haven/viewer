@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:animations/animations.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:video_player/video_player.dart';
 
@@ -14,6 +16,7 @@ import '/ui/screens/bug_report.dart';
 import '/ui/screens/scraping_report.dart';
 import '/ui/screens/video_screen/video_screen.dart';
 import '/ui/utils/toast_notification.dart';
+import '/ui/widgets/external_link_warning.dart';
 import '/utils/convert.dart';
 import '/utils/global_vars.dart';
 import '/utils/plugin_interface.dart';
@@ -418,6 +421,52 @@ class _VideoListState extends State<VideoList> {
                                                       setModalState(() {});
                                                     },
                                                   );
+                                                },
+                                              ),
+                                              ListTile(
+                                                leading:
+                                                    const Icon(Icons.share),
+                                                title: const Text("Share"),
+                                                onTap: () {
+                                                  // Windows and linux don't have share implementations
+                                                  // -> Copy to clipboard and show warning instead
+                                                  if (Platform.isWindows ||
+                                                      Platform.isLinux) {
+                                                    Clipboard.setData(ClipboardData(
+                                                        text: videoList![index]
+                                                            .plugin!
+                                                            .getVideoUriFromID(
+                                                                videoList![
+                                                                        index]
+                                                                    .iD)
+                                                            .toString()));
+                                                    showToast(
+                                                        "Share not available on "
+                                                        "${Platform.isWindows ? "Windows" : "Linux"}. "
+                                                        "Copied link to clipboard instead",
+                                                        context);
+                                                  }
+                                                  Share.shareUri(
+                                                      videoList![index]
+                                                          .plugin!
+                                                          .getVideoUriFromID(
+                                                              videoList![index]
+                                                                  .iD)!);
+                                                },
+                                              ),
+                                              ListTile(
+                                                leading: const Icon(
+                                                    Icons.open_in_new),
+                                                title: const Text(
+                                                    "Open in browser"),
+                                                onTap: () {
+                                                  openExternalLinkWithWarningDialog(
+                                                      context,
+                                                      videoList![index]
+                                                          .plugin!
+                                                          .getVideoUriFromID(
+                                                              videoList![index]
+                                                                  .iD)!);
                                                 },
                                               ),
                                               ListTile(
