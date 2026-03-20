@@ -190,8 +190,8 @@ class _ThirdPartyPluginInstallScreenState
       PluginInterface? newPlugin = PluginManager.getPluginByName(
           pluginConfigMap!["metadata"]["codeName"]);
       if (newPlugin == null) {
-        throw Exception(
-            "PluginManager did not find the newly installed plugin by codename");
+        throw Exception("PluginManager did not find the newly installed plugin"
+            " ${pluginConfigMap!["metadata"]["codeName"]} by codename");
       }
       PluginManager.enablePlugin(newPlugin);
       setState(() => isImportingPlugin = false);
