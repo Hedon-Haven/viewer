@@ -204,7 +204,7 @@ class UniversalVideoPreview {
       "thumbnailBinary":
           "Uint8List(${thumbnailBinary.length} bytes) [${thumbnailBinary.take(8).toList()}...]",
       "previewVideo": previewVideo?.toString(),
-      "durationInSeconds": duration?.inSeconds,
+      "duration": "${duration?.inSeconds} seconds",
       "viewsTotal": viewsTotal,
       "ratingsPositivePercent": ratingsPositivePercent,
       "maxQuality": maxQuality,
