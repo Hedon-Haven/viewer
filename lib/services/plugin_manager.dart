@@ -171,6 +171,7 @@ class PluginManager {
         // TODO: Show error to user and prompt user to uninstall plugin
         return;
       }
+      allPlugins.add(tempPlugin);
       if (enabledResultsProvidersFromSettings.contains(tempPlugin.codeName) ||
           enabledHomepageProvidersFromSettings.contains(tempPlugin.codeName) ||
           enabledSearchSuggestionsProvidersFromSettings
@@ -179,11 +180,12 @@ class PluginManager {
         // create a separate cache dir for each plugin and symlink it to the plugin dir
         Directory cacheDir =
             Directory("${cachePath.path}/plugins/${tempPlugin.codeName}");
-        if (!cacheDir.existsSync()) {
-          cacheDir.create(recursive: true);
-          Link("${dir.path}/cache")
-              .createSync("${cachePath.path}/plugins/${tempPlugin.codeName}");
+        if (cacheDir.existsSync()) {
+          cacheDir.deleteSync(recursive: true);
         }
+        cacheDir.createSync(recursive: true);
+        Link("${dir.path}/cache")
+            .createSync("${cachePath.path}/plugins/${tempPlugin.codeName}");
       }
       if (enabledResultsProvidersFromSettings.contains(tempPlugin.codeName)) {
         enabledResultsProviders.add(tempPlugin);
