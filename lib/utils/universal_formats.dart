@@ -116,6 +116,26 @@ class UniversalSearchRequest {
       "historySearch": historySearch
     };
   }
+
+  static UniversalSearchRequest fromMap(Map<String, dynamic> map) {
+    return UniversalSearchRequest(
+      searchString: map["searchString"],
+      sortingType: map["sortingType"],
+      dateRange: map["dateRange"],
+      minQuality: map["minQuality"],
+      maxQuality: map["maxQuality"],
+      minDuration: map["minDuration"],
+      maxDuration: map["maxDuration"],
+      minFramesPerSecond: map["minFramesPerSecond"],
+      maxFramesPerSecond: map["maxFramesPerSecond"],
+      virtualReality: map["virtualReality"],
+      categoriesInclude: (map["categoriesInclude"] as List?)?.cast<String>(),
+      categoriesExclude: (map["categoriesExclude"] as List?)?.cast<String>(),
+      keywordsInclude: (map["keywordsInclude"] as List?)?.cast<String>(),
+      keywordsExclude: (map["keywordsExclude"] as List?)?.cast<String>(),
+      historySearch: map["historySearch"],
+    );
+  }
 }
 
 /// To make working with search results from different websites easier, every plugin must convert their results to this format
@@ -216,6 +236,37 @@ class UniversalVideoPreview {
       "addedOn": addedOn?.toString(),
       "scrapeFailMessage": scrapeFailMessage
     };
+  }
+
+  static UniversalVideoPreview fromMap(
+      Map<String, dynamic> map, PluginInterface? plugin) {
+    return UniversalVideoPreview(
+      iD: map["iD"],
+      title: map["title"],
+      plugin: plugin,
+      thumbnail: map["thumbnail"],
+      thumbnailHttpHeaders:
+          (map["thumbnailHttpHeaders"] as Map?)?.cast<String, String>(),
+      thumbnailBinary: map["thumbnailBinary"] != null
+          ? Uint8List.fromList((map["thumbnailBinary"] as List).cast<int>())
+          : null,
+      previewVideo:
+          map["previewVideo"] != null ? Uri.parse(map["previewVideo"]) : null,
+      duration:
+          map["duration"] != null ? Duration(seconds: map["duration"]) : null,
+      viewsTotal: map["viewsTotal"],
+      ratingsPositivePercent: map["ratingsPositivePercent"],
+      maxQuality: map["maxQuality"],
+      virtualReality: map["virtualReality"],
+      authorName: map["authorName"],
+      authorID: map["authorID"],
+      verifiedAuthor: map["verifiedAuthor"],
+      lastWatched: map["lastWatched"] != null
+          ? DateTime.parse(map["lastWatched"])
+          : null,
+      addedOn: map["addedOn"] != null ? DateTime.parse(map["addedOn"]) : null,
+      scrapeFailMessage: map["scrapeFailMessage"],
+    );
   }
 
   /// Print values that are null, but the plugin didn't expect to be null
@@ -349,6 +400,40 @@ class UniversalVideoMetadata {
     };
   }
 
+  static UniversalVideoMetadata fromMap(
+      Map<String, dynamic> map, PluginInterface? plugin) {
+    return UniversalVideoMetadata(
+      iD: map["iD"],
+      m3u8Uris: (map["m3u8Uris"] as Map)
+          .map((k, v) => MapEntry(int.parse(k), Uri.parse(v))),
+      playbackHttpHeaders:
+          (map["playbackHttpHeaders"] as Map?)?.cast<String, String>(),
+      title: map["title"],
+      plugin: plugin,
+      universalVideoPreview:
+          UniversalVideoPreview.fromMap(map["universalVideoPreview"], plugin),
+      authorID: map["authorID"],
+      authorName: map["authorName"],
+      authorSubscriberCount: map["authorSubscriberCount"],
+      authorAvatar: map["authorAvatar"],
+      actors: (map["actors"] as List?)?.cast<String>(),
+      description: map["description"],
+      viewsTotal: map["viewsTotal"],
+      tags: (map["tags"] as List?)?.cast<String>(),
+      categories: (map["categories"] as List?)?.cast<String>(),
+      uploadDate: map["uploadDate"] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map["uploadDate"] * 1000)
+          : null,
+      ratingsPositiveTotal: map["ratingsPositiveTotal"],
+      ratingsNegativeTotal: map["ratingsNegativeTotal"],
+      ratingsTotal: map["ratingsTotal"],
+      virtualReality: map["virtualReality"] as bool? ?? false,
+      chapters: (map["chapters"] as Map?)?.map(
+          (k, v) => MapEntry(Duration(seconds: int.parse(k)), v as String)),
+      scrapeFailMessage: map["scrapeFailMessage"],
+    );
+  }
+
   /// Print values that are null, but the plugin didn't expect to be null
   /// Also returns a bool whether the data is valid
   // TODO: Set up automatic/user prompted reporting
@@ -450,6 +535,29 @@ class UniversalAuthorPage {
       "rawHtml": "Not shown due to length",
       "scrapeFailMessage": scrapeFailMessage
     };
+  }
+
+  static UniversalAuthorPage fromMap(
+      Map<String, dynamic> map, PluginInterface? plugin) {
+    return UniversalAuthorPage(
+      iD: map["iD"],
+      name: map["name"],
+      plugin: plugin,
+      avatar: map["avatar"],
+      banner: map["banner"],
+      aliases: (map["aliases"] as List?)?.cast<String>(),
+      description: map["description"],
+      advancedDescription:
+          (map["advancedDescription"] as Map?)?.cast<String, String>(),
+      externalLinks: (map["externalLinks"] as Map?)
+          ?.map((k, v) => MapEntry(k as String, Uri.parse(v))),
+      viewsTotal: map["viewsTotal"],
+      videosTotal: map["videosTotal"],
+      subscribers: map["subscribers"],
+      rank: map["rank"],
+      rawHtml: Document.html(map["rawHtml"]),
+      scrapeFailMessage: map["scrapeFailMessage"],
+    );
   }
 
   /// Print values that are null, but the plugin didn't expect to be null
@@ -558,6 +666,32 @@ class UniversalComment {
           replyComments?.map((comment) => comment.toMap()).toList().toString(),
       "scrapeFailMessage": scrapeFailMessage,
     };
+  }
+
+  static UniversalComment fromMap(
+      Map<String, dynamic> map, PluginInterface? plugin) {
+    return UniversalComment(
+      iD: map["iD"],
+      videoID: map["videoID"],
+      author: map["author"],
+      commentBody: map["commentBody"],
+      hidden: map["hidden"] as bool? ?? false,
+      plugin: plugin,
+      authorID: map["authorID"],
+      countryID: map["countryID"],
+      orientation: map["orientation"],
+      profilePicture: map["profilePicture"],
+      ratingsPositiveTotal: map["ratingsPositiveTotal"],
+      ratingsNegativeTotal: map["ratingsNegativeTotal"],
+      ratingsTotal: map["ratingsTotal"],
+      commentDate: map["commentDate"] != null
+          ? DateTime.parse(map["commentDate"])
+          : null,
+      replyComments: (map["replyComments"] as List?)
+          ?.map((c) => UniversalComment.fromMap(c, plugin))
+          .toList(),
+      scrapeFailMessage: map["scrapeFailMessage"],
+    );
   }
 
   void printAllAttributes() {
