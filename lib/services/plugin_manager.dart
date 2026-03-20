@@ -293,9 +293,8 @@ class PluginManager {
     downloadPluginIcons(force: true);
   }
 
-  static PluginInterface? getPluginByName(String name) {
-    // For database manager
-    if (name == "null") {
+  static PluginInterface? getPluginByName(String? name) {
+    if (name == null) {
       return null;
     }
     for (var plugin in allPlugins) {
@@ -303,7 +302,7 @@ class PluginManager {
         return plugin;
       }
     }
-    logger.e("Didnt find plugin with name: $name");
+    logger.e("Didn't find plugin with name: $name");
     return null;
   }
 
