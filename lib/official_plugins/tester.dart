@@ -62,7 +62,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
       50,
       (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
-        title: "Test homepage video $index",
+        title: "Test homepage video $index, page $page",
         plugin: this,
         thumbnail: "https://placehold.co/1280x720.png",
         previewVideo: Uri.parse(
@@ -102,7 +102,8 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
       50,
       (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
-        title: "Test result video $index",
+        title:
+            "Test result video $index, page $page, request ${request.searchString}",
         plugin: this,
         thumbnail: "https://placehold.co/1280x720.png",
         previewVideo: Uri.parse(
@@ -227,7 +228,8 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
         iD: "comment-$index",
         videoID: videoID,
         author: "author-$index",
-        commentBody: List<String>.filled(5, "test comment $index ").join(),
+        commentBody:
+            List<String>.filled(5, "test comment $index, page $page ").join(),
         hidden: index % 4 == 0,
         plugin: this,
         authorID: "author-$index",
@@ -279,7 +281,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     if (_simulateDelays) await Future.delayed(Duration(seconds: 2));
     return List.generate(
       50,
-          (index) => UniversalVideoPreview(
+      (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
         title: "Test suggestion video $index",
         plugin: this,
@@ -289,7 +291,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
         duration: Duration(seconds: 120 + index * 10),
         viewsTotal: (index * pi * 1000000).toInt(),
         ratingsPositivePercent:
-        int.tryParse((index * pi * 10000).toStringAsFixed(2)) ?? 50,
+            int.tryParse((index * pi * 10000).toStringAsFixed(2)) ?? 50,
         maxQuality: 720,
         virtualReality: false,
         authorName: "Tester-suggestion-author $index",
@@ -340,7 +342,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
       50,
       (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
-        title: "Test result video $index",
+        title: "Test author video $index, page $page",
         plugin: this,
         thumbnail: "https://placehold.co/1280x720.png",
         previewVideo: Uri.parse(
