@@ -427,7 +427,7 @@ class _VideoListState extends State<VideoList> {
                                                 leading:
                                                     const Icon(Icons.share),
                                                 title: const Text("Share"),
-                                                onTap: () {
+                                                onTap: () async {
                                                   // Windows and linux don't have share implementations
                                                   // -> Copy to clipboard and show warning instead
                                                   if (Platform.isWindows ||
@@ -447,11 +447,11 @@ class _VideoListState extends State<VideoList> {
                                                         context);
                                                   }
                                                   Share.shareUri(
-                                                      videoList![index]
+                                                      (await videoList![index]
                                                           .plugin!
                                                           .getVideoUriFromID(
                                                               videoList![index]
-                                                                  .iD)!);
+                                                                  .iD))!);
                                                 },
                                               ),
                                               ListTile(
@@ -459,14 +459,14 @@ class _VideoListState extends State<VideoList> {
                                                     Icons.open_in_new),
                                                 title: const Text(
                                                     "Open in browser"),
-                                                onTap: () {
+                                                onTap: () async {
                                                   openExternalLinkWithWarningDialog(
                                                       context,
-                                                      videoList![index]
+                                                      (await videoList![index]
                                                           .plugin!
                                                           .getVideoUriFromID(
                                                               videoList![index]
-                                                                  .iD)!);
+                                                                  .iD))!);
                                                 },
                                               ),
                                               ListTile(

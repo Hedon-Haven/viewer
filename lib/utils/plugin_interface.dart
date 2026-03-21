@@ -182,8 +182,8 @@ class PluginInterface {
     throw UnimplementedError();
   }
 
-  Uri? getVideoUriFromID(String videoID) {
     throw UnimplementedError();
+  Future<Uri?> getVideoUriFromID(String videoID) async {
   }
 
   /// Request video metadata and convert it to UniversalFormat<br>

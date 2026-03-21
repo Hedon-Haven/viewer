@@ -733,7 +733,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       Icons.share),
                   Text(" Share")
                 ]),
-                onPressed: () {
+                onPressed: () async {
                   // Windows and linux don't have share implementations
                   // -> Copy to clipboard and show warning instead
                   if (Platform.isWindows || Platform.isLinux) {
@@ -747,8 +747,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         "Copied link to clipboard instead",
                         context);
                   }
-                  Share.shareUri(videoMetadata.plugin!
-                      .getVideoUriFromID(videoMetadata.iD)!);
+                  Share.shareUri((await videoMetadata.plugin!
+                      .getVideoUriFromID(videoMetadata.iD))!);
                 },
               )),
               SizedBox(
@@ -766,8 +766,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 onPressed: () async {
                   openExternalLinkWithWarningDialog(
                       context,
-                      videoMetadata.plugin!
-                          .getVideoUriFromID(videoMetadata.iD)!);
+                      (await videoMetadata.plugin!
+                          .getVideoUriFromID(videoMetadata.iD))!);
                 },
               )),
               SizedBox(

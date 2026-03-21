@@ -378,7 +378,7 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Uri? getVideoUriFromID(String videoID) {
+  Future<Uri?> getVideoUriFromID(String videoID) async {
     return Uri.parse(_videoEndpoint + videoID);
   }
 

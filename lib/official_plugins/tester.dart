@@ -123,7 +123,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Uri? getVideoUriFromID(String videoID) {
+  Future<Uri?> getVideoUriFromID(String videoID) async {
     return Uri.parse("https://example.com/$videoID");
   }
 
