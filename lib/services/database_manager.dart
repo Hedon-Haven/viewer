@@ -275,7 +275,8 @@ Future<void> addToSearchHistory(
   newEntryData.remove("historySearch");
 
   // convert bool to int
-  newEntryData["virtualReality"] = newEntryData["virtualReality"] as int == 1;
+  newEntryData["virtualReality"] =
+      newEntryData["virtualReality"] == true ? 1 : 0;
 
   // Delete old entry
   List<Map<String, Object?>> oldEntry = await _database.query("search_history",
@@ -313,8 +314,8 @@ Future<void> addToWatchHistory(UniversalVideoPreview result) async {
   newEntryData["addedOn"] = DateTime.now().toUtc().toString();
 
   // convert bool to int
-  newEntryData["virtualReality"] = result.virtualReality ? 1 : 0;
-  newEntryData["verifiedAuthor"] = result.verifiedAuthor ? 1 : 0;
+  newEntryData["virtualReality"] = result.virtualReality == true ? 1 : 0;
+  newEntryData["verifiedAuthor"] = result.verifiedAuthor == true ? 1 : 0;
 
   // If entry already exists, fetch its addedOn value
   List<Map<String, Object?>> oldEntry = await _database.query("watch_history",
@@ -355,8 +356,8 @@ Future<void> addToFavorites(UniversalVideoPreview result) async {
   newEntryData["addedOn"] = DateTime.now().toUtc().toString();
 
   // convert bool to int
-  newEntryData["virtualReality"] = result.virtualReality ? 1 : 0;
-  newEntryData["verifiedAuthor"] = result.verifiedAuthor ? 1 : 0;
+  newEntryData["virtualReality"] = result.virtualReality == true ? 1 : 0;
+  newEntryData["verifiedAuthor"] = result.verifiedAuthor == true ? 1 : 0;
 
   await _database.insert("favorites", newEntryData);
 }
