@@ -59,7 +59,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     // Simulate a delay without blocking the entire app
     if (_simulateDelays) await Future.delayed(Duration(seconds: 2));
     return List.generate(
-      50,
+      10,
       (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
         title: "Test homepage video $index, page $page",
@@ -99,7 +99,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     // Simulate a delay without blocking the entire app
     if (_simulateDelays) await Future.delayed(Duration(seconds: 2));
     return List.generate(
-      50,
+      10,
       (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
         title:
@@ -280,7 +280,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     // Simulate a delay without blocking the entire app
     if (_simulateDelays) await Future.delayed(Duration(seconds: 2));
     return List.generate(
-      50,
+      10,
       (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
         title: "Test suggestion video $index",
@@ -339,7 +339,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   Future<List<UniversalVideoPreview>> getAuthorVideos(String authorID, int page,
       [void Function(String body)? debugCallback]) async {
     return List.generate(
-      50,
+      10,
       (index) => UniversalVideoPreview(
         iD: "${(index * pi * 10000).toInt()}",
         title: "Test author video $index, page $page",
