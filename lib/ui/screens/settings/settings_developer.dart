@@ -257,7 +257,9 @@ class LogScreen extends StatelessWidget {
     // Create a list of TextSpan widgets
     final textSpans = lines.map((line) {
       Color color;
-      if (line.startsWith('[D]')) {
+      if (line.startsWith('[T]')) {
+        color = Colors.grey;
+      } else if (line.startsWith('[D]')) {
         color = Colors.white;
       } else if (line.startsWith('[I]')) {
         color = Colors.blue;
@@ -265,6 +267,8 @@ class LogScreen extends StatelessWidget {
         color = Colors.yellow;
       } else if (line.startsWith('[E]')) {
         color = Colors.red;
+      } else if (line.startsWith('[F]')) {
+        color = Colors.purple;
       } else {
         color = Colors.white; // Default color
       }

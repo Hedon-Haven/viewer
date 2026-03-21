@@ -42,7 +42,7 @@ class BetterSimplePrinter extends LogPrinter {
     Level.info: '[I]',
     Level.warning: '[W]',
     Level.error: '[E]',
-    Level.fatal: '[FATAL]',
+    Level.fatal: '[F]',
   };
 
   static final levelColors = {
