@@ -3,8 +3,8 @@ import 'dart:math';
 
 import 'package:flutter/services.dart';
 import 'package:html/dom.dart';
+import 'package:image/image.dart';
 
-import '/utils/global_vars.dart';
 import '/utils/official_plugin.dart';
 import '/utils/plugin_interface.dart';
 import '/utils/universal_formats.dart';
@@ -182,8 +182,8 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
     final message = await receivePort.first as List;
     final rootToken = message[0] as RootIsolateToken;
     final resultsPort = message[1] as SendPort;
-    // final logPort = message[2] as SendPort;
-    // final fetchPort = message[3] as SendPort;
+    final logPort = message[2] as SendPort;
+    final fetchPort = message[3] as SendPort;
     //final videoID = message[4] as String;
     // final rawHtml = message[5] as Document;
 
@@ -192,15 +192,23 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
 
     List<Uint8List> completedProcessedImages = [];
 
-    // convert placeholder image to Uint8List
-    final response =
-        await client.get(Uri.parse("https://placehold.co/720x480.png"));
-    if (response.statusCode == 200) {
-      for (int i = 0; i < 10; i++) {
-        completedProcessedImages.add(response.bodyBytes);
-      }
-    } else {
-      throw Exception("Failed to download/convert placeholder image");
+    // Simulate heavy processing
+    final end = DateTime.now().add(const Duration(seconds: 3));
+    while (DateTime.now().isBefore(end)) {
+      // Burn CPU cycles
+      sqrt(DateTime.now().microsecondsSinceEpoch.toDouble());
+    }
+    logPort.send(["debug", "Heavy processing completed"]);
+
+    // Request the main thread to fetch the image
+    final responsePort = ReceivePort();
+    fetchPort.send(
+        [Uri.parse("https://placehold.co/720x480.png"), responsePort.sendPort]);
+    Uint8List imageRaw = await responsePort.first as Uint8List;
+    Uint8List encodedImage = encodeJpg(decodePng(imageRaw)!);
+    responsePort.close();
+    for (int i = 0; i < 1000; i++) {
+      completedProcessedImages.add(encodedImage);
     }
 
     resultsPort.send(completedProcessedImages);
