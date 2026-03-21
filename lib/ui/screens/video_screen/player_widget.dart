@@ -233,6 +233,30 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     setState(() {});
   }
 
+  void updateProgressThumbnailPosition(ThumbDragDetails position) {
+    if (widget.progressThumbnails?.isNotEmpty ?? false) {
+      timelineProgressThumbnail =
+          widget.progressThumbnails![position.timeStamp.inSeconds];
+    }
+
+    double screenWidth = MediaQuery.of(context).size.width;
+    // make sure the progress image stays within the screen bounds -20px
+    // but still moves with the thumb cursor when it can
+    if (position.globalPosition.dx > 100) {
+      if (position.globalPosition.dx > screenWidth - 100) {
+        progressThumbnailPosition = screenWidth - 180;
+      } else {
+        progressThumbnailPosition = position.globalPosition.dx - 80;
+      }
+    } else {
+      progressThumbnailPosition = 20;
+    }
+
+    // FIXME: ProgressThumbnails flicker when loaded the first time from memory
+    // FIXME: Invalid image data when loading a real progress thumbnail for the first time
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final double maxDrag = MediaQuery.of(context).size.width * 9 / 16 * 0.4;
@@ -496,11 +520,12 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             // Use setState to force an update
             onDragStart: !enableProgressThumbnails
                 ? null
-                : (_) {
+                : (position) {
                     // if the list is empty (i.e. the getProgressThumbnails function
                     // failed or the provider has no thumbnails), don't show the loading thumbnail
                     if (widget.progressThumbnails?.isNotEmpty ?? true) {
                       logger.d("Drag start, showing progress thumbnail");
+                      updateProgressThumbnailPosition(position);
                       setState(() {
                         hidePlayControls = true;
                         showProgressThumbnail = true;
@@ -512,30 +537,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                   },
             onDragUpdate: !enableProgressThumbnails
                 ? null
-                : (position) {
-                    if (widget.progressThumbnails?.isNotEmpty ?? false) {
-                      timelineProgressThumbnail = widget
-                          .progressThumbnails![position.timeStamp.inSeconds];
-                    }
-
-                    double screenWidth = MediaQuery.of(context).size.width;
-                    // make sure the progress image stays within the screen bounds -20px
-                    // but still moves with the thumbcursor when it can
-                    if (position.globalPosition.dx > 100) {
-                      if (position.globalPosition.dx > screenWidth - 100) {
-                        progressThumbnailPosition = screenWidth - 180;
-                      } else {
-                        progressThumbnailPosition =
-                            position.globalPosition.dx - 80;
-                      }
-                    } else {
-                      progressThumbnailPosition = 20;
-                    }
-
-                    // FIXME: ProgressThumbnails flicker when loaded the first time from memory
-                    // FIXME: Invalid image data when loading a real progress thumbnail for the first time
-                    setState(() {});
-                  },
+                : (position) => updateProgressThumbnailPosition(position),
             // This function is called when the user lets go
             onDragEnd: !enableProgressThumbnails
                 ? null
