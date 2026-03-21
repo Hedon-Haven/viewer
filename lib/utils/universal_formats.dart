@@ -400,8 +400,8 @@ class UniversalVideoMetadata {
     };
   }
 
-  static UniversalVideoMetadata fromMap(
-      Map<String, dynamic> map, PluginInterface? plugin) {
+  static UniversalVideoMetadata fromMap(Map<String, dynamic> map,
+      PluginInterface? plugin, UniversalVideoPreview uvp) {
     return UniversalVideoMetadata(
       iD: map["iD"],
       m3u8Uris: (map["m3u8Uris"] as Map)
@@ -410,8 +410,7 @@ class UniversalVideoMetadata {
           (map["playbackHttpHeaders"] as Map?)?.cast<String, String>(),
       title: map["title"],
       plugin: plugin,
-      universalVideoPreview:
-          UniversalVideoPreview.fromMap(map["universalVideoPreview"], plugin),
+      universalVideoPreview: uvp,
       authorID: map["authorID"],
       authorName: map["authorName"],
       authorSubscriberCount: map["authorSubscriberCount"],
