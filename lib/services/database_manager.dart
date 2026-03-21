@@ -278,6 +278,14 @@ Future<void> addToSearchHistory(
   newEntryData["virtualReality"] =
       newEntryData["virtualReality"] == true ? 1 : 0;
 
+  // Convert List to String
+  newEntryData["categoriesInclude"] =
+      jsonEncode(newEntryData["categoriesInclude"]);
+  newEntryData["categoriesExclude"] =
+      jsonEncode(newEntryData["categoriesExclude"]);
+  newEntryData["keywordsInclude"] = jsonEncode(newEntryData["keywordsInclude"]);
+  newEntryData["keywordsExclude"] = jsonEncode(newEntryData["keywordsExclude"]);
+
   // Delete old entry
   List<Map<String, Object?>> oldEntry = await _database.query("search_history",
       where: "searchString = ?", whereArgs: [request.searchString]);
