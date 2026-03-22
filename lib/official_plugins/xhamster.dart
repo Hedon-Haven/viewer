@@ -282,7 +282,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Future<bool> init([void Function(String body)? debugCallback]) async {
+  Future<bool> init(String cachePath,
+      [void Function(String body)? debugCallback]) async {
     // Request main page to check for age gate / banned country
     http.Response response = await client.get(Uri.parse(providerUrl));
     if (response.statusCode != 200) {

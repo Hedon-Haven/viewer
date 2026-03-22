@@ -167,8 +167,8 @@ class PluginInterface {
     });
   }
 
-  Future<bool> init([void Function(String body)? debugCallback]) async {
-    // Init isolate
+  Future<bool> init(String cachePath,
+      [void Function(String body)? debugCallback]) async {
     try {
       final mainPort = ReceivePort();
       final rootToken = RootIsolateToken.instance!;
@@ -187,6 +187,7 @@ class PluginInterface {
 
       _isolateSendPort.send({
         "pluginPath": _pluginPath,
+        "cachePath": cachePath,
         "rootToken": rootToken,
         "logPort": logPort.sendPort,
         "fetchPort": fetchPort.sendPort,

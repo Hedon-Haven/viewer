@@ -387,7 +387,8 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   }
 
   @override
-  Future<bool> init([void Function(String body)? debugCallback]) async {
+  Future<bool> init(String cachePath,
+      [void Function(String body)? debugCallback]) async {
     logger.i("Initializing $codeName plugin");
     // To be able to make search suggestion requests later, both a session cookie and a token are needed
     // Get the sessions cookie (called ss) from the response headers

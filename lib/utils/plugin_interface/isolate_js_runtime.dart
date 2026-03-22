@@ -4,6 +4,7 @@ import 'dart:isolate';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_js/flutter_js.dart';
+import 'package:path/path.dart' as p;
 
 late JavascriptRuntime _runtime;
 bool _initialized = false;
@@ -33,6 +34,7 @@ void _setup(Map<String, dynamic> message) {
   final SendPort logPort = message["logPort"] as SendPort;
   final SendPort fetchPort = message["fetchPort"] as SendPort;
   final SendPort readyPort = message["readyPort"] as SendPort;
+  final String cachePath = message["cachePath"] as String;
   BackgroundIsolateBinaryMessenger.ensureInitialized(rootToken);
 
   _runtime = getJavascriptRuntime(xhr: false);
@@ -58,6 +60,37 @@ void _setup(Map<String, dynamic> message) {
       responsePort.close();
       return jsonEncode(response as Map);
     });
+  });
+
+  _runtime.onMessage("writeCacheFile", (dynamic args) {
+    try {
+      // ignore: prefer_interpolation_to_compose_strings
+      final file = File(p.join(cachePath, message["filePath"]));
+      file.createSync(recursive: true);
+      file.writeAsBytesSync(base64Decode(message["base64EncodedContents"]));
+    } catch (e, st) {
+      // Send error message back to main isolate
+      logPort.send({
+        "level": "error",
+        "message": "Failed to write cache file: $e\n$st",
+      });
+      return jsonEncode("Error: $e");
+    }
+    return jsonEncode(true);
+  });
+
+  _runtime.onMessage("readCacheFile", (dynamic args) {
+    try {
+      final file = File(p.join(cachePath, message["filePath"]));
+      return jsonEncode(base64Encode(file.readAsBytesSync()));
+    } catch (e, st) {
+      // Send error message back to main isolate
+      logPort.send({
+        "level": "error",
+        "message": "Failed to read cache file: $e\n$st",
+      });
+      return jsonEncode("Error: $e");
+    }
   });
 
   _initialized = true;
