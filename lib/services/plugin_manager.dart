@@ -227,6 +227,7 @@ class PluginManager {
     enabledResultsProviders.remove(plugin);
     enabledHomepageProviders.remove(plugin);
     enabledSearchSuggestionsProviders.remove(plugin);
+    plugin.dispose();
     logger.i("Plugin ${plugin.codeName} disabled successfully");
     writePluginListToSettings();
     writeProvidersListToSettings("results");
