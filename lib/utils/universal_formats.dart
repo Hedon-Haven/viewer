@@ -660,7 +660,9 @@ class UniversalComment {
       "ratingsPositiveTotal": ratingsPositiveTotal,
       "ratingsNegativeTotal": ratingsNegativeTotal,
       "ratingsTotal": ratingsTotal,
-      "commentDate": commentDate?.toString(),
+      "commentDate": commentDate?.millisecondsSinceEpoch != null
+          ? (commentDate!.millisecondsSinceEpoch / 1000).toInt()
+          : null,
       "replyComments":
           replyComments?.map((comment) => comment.toMap()).toList().toString(),
       "scrapeFailMessage": scrapeFailMessage,
@@ -684,7 +686,7 @@ class UniversalComment {
       ratingsNegativeTotal: map["ratingsNegativeTotal"],
       ratingsTotal: map["ratingsTotal"],
       commentDate: map["commentDate"] != null
-          ? DateTime.parse(map["commentDate"])
+          ? DateTime.fromMillisecondsSinceEpoch(map["commentDate"] * 1000)
           : null,
       replyComments: (map["replyComments"] as List?)
           ?.map((c) => UniversalComment.fromMap(c, plugin))
