@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '/ui/screens/bug_report.dart';
 import '/utils/global_vars.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 
 class ScrapingReportScreen extends StatefulWidget {
   final Map<PluginInterface, Map<String, List<dynamic>>> multiProviderMap;

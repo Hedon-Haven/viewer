@@ -13,7 +13,7 @@ import 'package:image/image.dart';
 import '/utils/exceptions.dart';
 import '/utils/global_vars.dart';
 import '/utils/official_plugin.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 import '/utils/try_parse.dart';
 import '/utils/universal_formats.dart';
 

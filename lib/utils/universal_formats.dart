@@ -4,7 +4,7 @@ import 'package:html/dom.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '/utils/global_vars.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 
 class UniversalSearchRequest {
   final String searchString;

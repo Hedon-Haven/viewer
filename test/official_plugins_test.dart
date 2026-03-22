@@ -9,7 +9,7 @@ import 'package:hedon_haven/services/http_manager.dart';
 import 'package:hedon_haven/services/official_plugins_tracker.dart';
 import 'package:hedon_haven/utils/global_vars.dart';
 import 'package:hedon_haven/utils/official_plugin.dart';
-import 'package:hedon_haven/utils/plugin_interface.dart';
+import 'package:hedon_haven/utils/plugin_interface/plugin_interface.dart';
 import 'package:hedon_haven/utils/universal_formats.dart';
 import 'package:logger/logger.dart';
 import 'package:mockito/mockito.dart';

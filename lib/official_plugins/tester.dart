@@ -6,7 +6,7 @@ import 'package:html/dom.dart';
 import 'package:image/image.dart';
 
 import '/utils/official_plugin.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 import '/utils/universal_formats.dart';
 
 /// This plugin is only used for testing and is hidden in the release version

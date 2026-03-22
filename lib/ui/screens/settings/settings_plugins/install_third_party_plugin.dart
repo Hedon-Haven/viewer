@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import '/services/plugin_manager.dart';
 import '/ui/widgets/alert_dialog.dart';
 import '/utils/global_vars.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 
 class ThirdPartyPluginInstallScreen extends StatefulWidget {
   final bool partOfOnboarding;

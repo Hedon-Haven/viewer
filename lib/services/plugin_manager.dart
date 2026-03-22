@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:yaml/yaml.dart';
 
 import '/utils/global_vars.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 import 'icon_manager.dart';
 import 'official_plugins_tracker.dart';
 

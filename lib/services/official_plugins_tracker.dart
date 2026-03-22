@@ -3,7 +3,7 @@ import '/official_plugins/tester.dart';
 import '/official_plugins/xhamster.dart';
 import '/utils/global_vars.dart';
 import '/utils/official_plugin.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 
 // While official plugins are also PluginInterface types, they in reality do not
 // communicate with any binaries, but are compiled directly into the app

@@ -19,7 +19,7 @@ import '/ui/utils/toast_notification.dart';
 import '/ui/widgets/external_link_warning.dart';
 import '/utils/convert.dart';
 import '/utils/global_vars.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 import '/utils/try_parse.dart';
 import '/utils/universal_formats.dart';
 import 'settings/settings_plugins/settings_plugins.dart';

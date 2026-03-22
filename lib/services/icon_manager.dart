@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '/utils/global_vars.dart';
-import '/utils/plugin_interface.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 import 'plugin_manager.dart';
 
 /// Including plugin images in the app itself (or inside the third party plugin) might break copyright law
