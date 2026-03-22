@@ -86,7 +86,7 @@ void main() async {
     test("initPlugin", () async {
       logger.i("Testing initPlugin");
       expect(
-          await plugin.initPlugin((body) =>
+          await plugin.init((body) =>
               File("${dumpDir.path}/initPlugin/initPlugin.html")
                   .writeAsStringSync(body)),
           isTrue);

@@ -44,7 +44,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   // There is no need to override the testingMap, as this tester plugin wont fail to scrape anything
 
   @override
-  Future<bool> initPlugin([void Function(String body)? debugCallback]) {
+  Future<bool> init([void Function(String body)? debugCallback]) {
     return Future.value(true);
   }
 

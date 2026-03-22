@@ -113,7 +113,7 @@ class PluginManager {
           enabledSearchSuggestionsProvidersFromSettings
               .contains(plugin.codeName)) {
         try {
-          if (await plugin.initPlugin()) {
+          if (await plugin.init()) {
             enabledPlugins.add(plugin);
           }
         } catch (e, stacktrace) {
@@ -167,7 +167,7 @@ class PluginManager {
         }
         continue;
       }
-      if (await tempPlugin.initPlugin() == false) {
+      if (await tempPlugin.init() == false) {
         // TODO: Show error to user and prompt user to uninstall plugin
         return;
       }
@@ -202,7 +202,7 @@ class PluginManager {
   static Future<bool> enablePlugin(PluginInterface plugin,
       [bool enableAllProviders = true]) async {
     try {
-      await plugin.initPlugin();
+      await plugin.init();
     } catch (e, stacktrace) {
       logger.e("Failed to initiate ${plugin.codeName}: $e\n$stacktrace");
       unavailablePlugins[plugin] = e as Exception;
