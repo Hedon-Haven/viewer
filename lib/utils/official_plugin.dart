@@ -34,6 +34,9 @@ abstract class OfficialPlugin {
     "testingAuthorPageIds": ["", "", ""]
   };
 
+  // No need for actual dispose in OfficialPlugins
+  void dispose() {}
+
   /// Parse a master m3u8 into media m3u8s
   Future<Map<int, Uri>> parseM3U8(Uri playListUri) async {
     Map<int, Uri> playListMap = {};
