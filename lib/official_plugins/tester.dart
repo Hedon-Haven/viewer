@@ -14,6 +14,8 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   bool isOfficialPlugin = true;
   @override
+  bool isInitialized = false;
+  @override
   String codeName = "tester-official";
   @override
   String prettyName = "Tester plugin";
@@ -44,9 +46,13 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   // There is no need to override the testingMap, as this tester plugin wont fail to scrape anything
 
   @override
-    return Future.value(true);
   Future<bool> init(String cachePath,
       [void Function(String body)? debugCallback]) async {
+    if (isInitialized) {
+      return true;
+    }
+    isInitialized = true;
+    return true;
   }
 
   @override

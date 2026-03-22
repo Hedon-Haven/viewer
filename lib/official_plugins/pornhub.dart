@@ -21,6 +21,8 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   @override
   final bool isOfficialPlugin = true;
   @override
+  bool isInitialized = false;
+  @override
   String codeName = "pornhub-official";
   @override
   String prettyName = "Pornhub.com";
@@ -389,6 +391,10 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Future<bool> init(String cachePath,
       [void Function(String body)? debugCallback]) async {
+    if (isInitialized) {
+      return true;
+    }
+    isInitialized = true;
     logger.i("Initializing $codeName plugin");
     // To be able to make search suggestion requests later, both a session cookie and a token are needed
     // Get the sessions cookie (called ss) from the response headers

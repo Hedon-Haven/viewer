@@ -15,6 +15,9 @@ class PluginInterface {
   /// This is overridden to true in official plugins
   final bool isOfficialPlugin = false;
 
+  /// Whether the plugin has already been initialized
+  bool isInitialized = false;
+
   /// codeName must be a unique identifier for the plugin, to avoid conflicts,
   /// especially if the plugin overrides an official plugin. Cannot be empty
   /// Cannot contain spaces, special chars or non-latin characters, as its used
@@ -169,6 +172,10 @@ class PluginInterface {
 
   Future<bool> init(String cachePath,
       [void Function(String body)? debugCallback]) async {
+    if (isInitialized) {
+      return true;
+    }
+    isInitialized = true;
     try {
       final mainPort = ReceivePort();
       final rootToken = RootIsolateToken.instance!;

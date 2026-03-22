@@ -19,6 +19,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   final bool isOfficialPlugin = true;
   @override
+  bool isInitialized = false;
+  @override
   String codeName = "xhamster-official";
   @override
   String prettyName = "xHamster.com";
@@ -284,6 +286,10 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Future<bool> init(String cachePath,
       [void Function(String body)? debugCallback]) async {
+    if (isInitialized) {
+      return true;
+    }
+    isInitialized = true;
     // Request main page to check for age gate / banned country
     http.Response response = await client.get(Uri.parse(providerUrl));
     if (response.statusCode != 200) {
