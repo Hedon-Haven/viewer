@@ -77,6 +77,12 @@ class PluginInterface {
   @override
   int get hashCode => codeName.hashCode;
 
+  static bool codeNameIsValid(String codeName) {
+    final regex =
+        RegExp(r"^(?!.*\.\.)[A-Za-z0-9]+\.[A-Za-z0-9]+\.[A-Za-z0-9]+$");
+    return !regex.hasMatch(codeName);
+  }
+
   bool _checkAndLoadFromConfig(String configPath) {
     try {
       var config = loadYaml(File(configPath).readAsStringSync());
@@ -200,6 +206,10 @@ class PluginInterface {
       return;
     }
     isInitialized = true;
+
+    if (!codeNameIsValid(codeName)) {
+      throw Exception("Invalid plugin codeName: $codeName");
+    }
 
     final mainPort = ReceivePort();
     final rootToken = RootIsolateToken.instance!;
