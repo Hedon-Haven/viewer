@@ -69,6 +69,14 @@ class PluginInterface {
     }
   }
 
+  // For the Sets in plugin_manager
+  @override
+  bool operator ==(Object other) =>
+      other is PluginInterface && other.codeName == codeName;
+
+  @override
+  int get hashCode => codeName.hashCode;
+
   bool _checkAndLoadFromConfig(String configPath) {
     try {
       var config = loadYaml(File(configPath).readAsStringSync());
