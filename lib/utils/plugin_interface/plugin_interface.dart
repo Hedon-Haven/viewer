@@ -161,6 +161,9 @@ class PluginInterface {
   }
 
   void dispose() {
+    if (!isInitialized) {
+      return;
+    }
     logger.d("Disposing $codeName plugin's isolate");
     bool exited = false;
     final exitPort = ReceivePort();
@@ -182,6 +185,11 @@ class PluginInterface {
       logger.w("$codeName: isolate did not dispose cleanly, forcing kill");
       _isolate.kill(priority: Isolate.immediate);
     });
+
+    // This is technically set before the isolate force-kill happens, but users
+    // might toggle the plugin quicker -> rather have 2 instances for a few
+    // seconds than failing to initialize
+    isInitialized = false;
   }
 
   Future<bool> init(String cachePath,
