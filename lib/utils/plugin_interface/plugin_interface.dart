@@ -192,53 +192,46 @@ class PluginInterface {
     isInitialized = false;
   }
 
-  Future<bool> init(String cachePath,
+  /// Initialize the plugin isolate and run initPlugin() inside it
+  /// CAREFUL, this function doesn't handle errors!
+  Future<void> init(String cachePath,
       [void Function(String body)? debugCallback]) async {
     if (isInitialized) {
-      return true;
+      return;
     }
     isInitialized = true;
-    try {
-      final mainPort = ReceivePort();
-      final rootToken = RootIsolateToken.instance!;
-      _isolate = await Isolate.spawn(initPluginIsolate, mainPort.sendPort);
-      _isolateSendPort = await mainPort.first as SendPort;
-      mainPort.close();
 
-      final logPort = ReceivePort();
-      final fetchPort = ReceivePort();
-      final readyPort = ReceivePort();
+    final mainPort = ReceivePort();
+    final rootToken = RootIsolateToken.instance!;
+    _isolate = await Isolate.spawn(initPluginIsolate, mainPort.sendPort);
+    _isolateSendPort = await mainPort.first as SendPort;
+    mainPort.close();
 
-      logPort.listen((value) => _consoleLog(Map<String, String>.from(value)));
+    final logPort = ReceivePort();
+    final fetchPort = ReceivePort();
+    final readyPort = ReceivePort();
 
-      fetchPort.listen(
-          (message) async => _httpRequest(message["responsePort"], message));
+    logPort.listen((value) => _consoleLog(Map<String, String>.from(value)));
 
-      _isolateSendPort.send({
-        "pluginPath": _pluginPath,
-        "cachePath": cachePath,
-        "rootToken": rootToken,
-        "logPort": logPort.sendPort,
-        "fetchPort": fetchPort.sendPort,
-        "readyPort": readyPort.sendPort,
-      });
+    fetchPort.listen(
+        (message) async => _httpRequest(message["responsePort"], message));
 
-      // Wait for runtime init in isolate
-      await readyPort.first;
-      readyPort.close();
-      _isolateReady.complete();
-    } catch (e, st) {
-      logger.e("$codeName: Error initializing plugin: $e$st");
-      return false;
-    }
+    _isolateSendPort.send({
+      "pluginPath": _pluginPath,
+      "cachePath": cachePath,
+      "rootToken": rootToken,
+      "logPort": logPort.sendPort,
+      "fetchPort": fetchPort.sendPort,
+      "readyPort": readyPort.sendPort,
+    });
+
+    // Wait for runtime init in isolate
+    await readyPort.first;
+    readyPort.close();
+    _isolateReady.complete();
 
     // Some plugins might need to be prepared before they can be used (e.g. fetch cookies)
-    try {
-      await _callFunction("initPlugin", []) as bool;
-    } catch (e) {
-      return false;
-    }
-    return true;
+    await _callFunction("initPlugin", []) as bool;
   }
 
   /// Test full plugin functionality and return false if it fails
