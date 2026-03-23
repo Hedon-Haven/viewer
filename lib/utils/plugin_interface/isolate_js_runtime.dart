@@ -109,7 +109,7 @@ void _callFunction(Map<String, dynamic> message) async {
     _runtime.executePendingJob();
 
     JsEvalResult finalResult = await _runtime.handlePromise(jsResult);
-    // Make sure to not await dart future's before sending back to main isolate
+    // Make sure to await dart futures before sending back to main isolate
     var raw = finalResult.rawResult;
     if (raw is Future) {
       raw = await raw;
