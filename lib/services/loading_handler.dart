@@ -26,7 +26,7 @@ class LoadingHandler {
       List<PluginInterface> plugins = const []]) async {
     // read plugins from settings if not passed to this function
     if (plugins.isEmpty) {
-      plugins = PluginManager.enabledResultsProviders;
+      plugins = await PluginManager.getProviders(ProviderType.searchResults);
       // This should not happen
       if (plugins.isEmpty) {
         logger.e(
@@ -44,7 +44,7 @@ class LoadingHandler {
     // read plugins from settings if not passed to this function
     if (plugins.isEmpty) {
       // if search request empty -> homepage request
-      plugins = PluginManager.enabledHomepageProviders;
+      plugins = await PluginManager.getProviders(ProviderType.homepage);
       // This should not happen
       if (plugins.isEmpty) {
         logger.e(
@@ -230,14 +230,16 @@ class LoadingHandler {
     }
 
     // check if there are any enabled search suggestions providers
-    if (PluginManager.enabledSearchSuggestionsProviders.isEmpty) {
+    if ((await PluginManager.getProviders(ProviderType.searchSuggestions))
+        .isEmpty) {
       logger.e("No search suggestions providers configured in settings");
       return null;
     }
 
     // Simultaneously start queries for all enabled plugins
     List<Future<List<String>>> futures = [];
-    for (var plugin in PluginManager.enabledSearchSuggestionsProviders) {
+    for (var plugin
+        in await PluginManager.getProviders(ProviderType.searchSuggestions)) {
       futures.add(plugin.getSearchSuggestions(query));
     }
 

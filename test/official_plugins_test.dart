@@ -76,7 +76,7 @@ void main() async {
   Directory("${Directory.current.path}/dumps/getComments").createSync();
   Directory("${Directory.current.path}/dumps/getAuthorPage").createSync();
   Directory("${Directory.current.path}/dumps/getAuthorVideos").createSync();
-
+  Directory("${Directory.current.path}/dumps/pluginCache");
   logger.i("Dump dirs created at ${dumpDir.path}");
 
   // Create encoder with indent for nicer dumps
@@ -85,11 +85,15 @@ void main() async {
   group("Testing ${plugin.codeName}", () {
     test("initPlugin", () async {
       logger.i("Testing initPlugin");
-      expect(
-          await plugin.init((body) =>
-              File("${dumpDir.path}/initPlugin/initPlugin.html")
-                  .writeAsStringSync(body)),
-          isTrue);
+
+      try {
+        await plugin.init(
+            Directory("${Directory.current.path}/dumps/pluginCache").path,
+            (body) => File("${dumpDir.path}/initPlugin/initPlugin.html")
+                .writeAsStringSync(body));
+      } catch (e) {
+        fail("plugin.init threw: $e");
+      }
     });
 
     timeout();

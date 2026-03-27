@@ -34,7 +34,7 @@ void main() async {
   logger.i("Initializing app");
   await setDefaultSettings();
   await initDb();
-  await PluginManager.discoverAndLoadPlugins();
+  await PluginManager.init();
   // Icons are not critical to startup -> don't await
   downloadPluginIcons();
   await processArgs();
