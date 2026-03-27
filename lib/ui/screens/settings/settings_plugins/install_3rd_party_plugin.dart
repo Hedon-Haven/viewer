@@ -156,14 +156,17 @@ class _Install3rdPartyPluginScreenState
       showErrorDialog("Not a valid plugin zip file!", "$e\n$stacktrace");
       setState(() => fileName = null);
     }
+    logger.i("Finished extracting plugin, waiting for user confirmation");
   }
 
   void testPlugin() async {
     setState(() => isTestingPlugin = true);
+    logger.i("Testing plugin functionality");
     try {
       final passed = await PluginManager.testExternalPlugin(
           Directory(pluginConfigMap!["tempPluginPath"]));
       if (!passed) {
+        logger.w("Functionality tests (fully/partially) failed");
         setState(() {
           isTestingPlugin = false;
           funcTestFailed = true;
