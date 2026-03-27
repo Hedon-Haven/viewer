@@ -30,6 +30,9 @@ class PluginInterface {
   /// Plugin version
   double version = 0.0;
 
+  /// Plugin developer name
+  String developer = "";
+
   /// UpdateUri is optional. If provided, it will be used to check for updates.
   Uri? updateUrl;
 
@@ -95,6 +98,7 @@ class PluginInterface {
       codeName = config["metadata"]["codeName"];
       prettyName = config["metadata"]["prettyName"];
       version = config["metadata"]["version"];
+      developer = config["metadata"]["developer"];
       updateUrl = Uri.parse(config["metadata"]["updateUrl"]);
       iconUrl = Uri.parse(config["providerData"]["iconUrl"]);
       providerUrl = config["providerData"]["providerUrl"];
