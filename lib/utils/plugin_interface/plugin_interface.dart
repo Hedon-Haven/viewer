@@ -63,7 +63,7 @@ class PluginInterface {
 
   late Isolate _isolate;
   late SendPort _isolateSendPort;
-  final Completer<void> _isolateReady = Completer();
+  Completer<void> _isolateReady = Completer();
 
   PluginInterface(this._pluginPath) {
     if (!_checkAndLoadFromConfig("$_pluginPath/plugin.yaml")) {
@@ -200,6 +200,7 @@ class PluginInterface {
     // might toggle the plugin quicker -> rather have 2 instances for a few
     // seconds than failing to initialize
     isInitialized = false;
+    _isolateReady = Completer();
   }
 
   /// Initialize the plugin isolate and run initPlugin() inside it
