@@ -19,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<UniversalVideoPreview>?> videoResults = Future.value([]);
   LoadingHandler loadingHandler = LoadingHandler();
   bool isLoading = true;
+  bool noPluginsEnabled = false;
 
   @override
   void initState() {
@@ -47,6 +48,12 @@ class _HomeScreenState extends State<HomeScreen> {
           // Update the scraping report button
           setState(() => isLoading = false);
         });
+      }
+    });
+
+    PluginManager.getProviders(ProviderType.homepage).then((value) {
+      if (value.isEmpty) {
+        setState(() => noPluginsEnabled = true);
       }
     });
   }
@@ -161,8 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           showScrapingReportButton: true,
                           scrapingReportMap: loadingHandler.resultsIssues,
                           ignoreInternetError: false,
-                          noPluginsEnabled:
-                              PluginManager.enabledHomepageProviders.isEmpty,
+                          noPluginsEnabled: noPluginsEnabled,
                           noPluginsMessage:
                               "No homepage providers enabled. Enable at least one plugin's homepage provider setting",
                         )

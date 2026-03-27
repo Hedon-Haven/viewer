@@ -51,10 +51,10 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     // Check if there are search suggestion providers
-    if (PluginManager.enabledSearchSuggestionsProviders.isEmpty) {
+    PluginManager.getProviders(ProviderType.searchSuggestions).then((value) {
       setState(() => noSearchProvidersEnabled = true);
       logger.w("No search suggestion providers enabled");
-    }
+    });
 
     // Request focus
     // The future is to avoid calling this before the widget is done initializing
@@ -214,7 +214,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                 builder: (context) => PluginsScreen(),
                               ));
                           // Re-check if there are search suggestion providers
-                          if (PluginManager.enabledResultsProviders.isEmpty) {
+                          if ((await PluginManager.getProviders(
+                                  ProviderType.searchSuggestions))
+                              .isEmpty) {
                             setState(() => noSearchProvidersEnabled = true);
                             logger.w("No search suggestion providers enabled");
                           }

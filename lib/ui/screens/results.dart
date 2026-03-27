@@ -27,6 +27,7 @@ class ResultsScreen extends StatefulWidget {
 class _ResultsScreenState extends State<ResultsScreen> {
   Key videoListKey = UniqueKey();
   bool isLoading = true;
+  bool noPluginsEnabled = false;
 
   @override
   void initState() {
@@ -35,6 +36,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
       logger.d("ResultsIssues Map: ${widget.loadingHandler.resultsIssues}");
       // Update the scraping report button
       setState(() => isLoading = false);
+    });
+
+    PluginManager.getProviders(ProviderType.searchResults).then((value) {
+      if (value.isEmpty) {
+        setState(() => noPluginsEnabled = true);
+      }
     });
   }
 
@@ -154,8 +161,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   showScrapingReportButton: true,
                   scrapingReportMap: widget.loadingHandler.resultsIssues,
                   ignoreInternetError: false,
-                  noPluginsEnabled:
-                      PluginManager.enabledResultsProviders.isEmpty,
+                  noPluginsEnabled: noPluginsEnabled,
                   noPluginsMessage:
                       "No result providers enabled. Enable at least one plugin's result provider setting")
             ])));
