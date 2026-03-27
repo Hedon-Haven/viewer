@@ -54,6 +54,8 @@ Future<bool> startUpgrade(String currentVersion) async {
         // Also durationInSeconds was renamed to duration
         // recreate entire db
         await purgeDatabase();
+        // Update settings related to plugins
+        await updatePluginSettings();
         break;
       default:
         logger.e("Unknown version: $currentVersion. Not changing anything");
@@ -104,4 +106,20 @@ Future<void> fixLauncherAppearanceString() async {
     await sharedStorage.setString(
         "appearance_launcher_appearance", "Hedon Haven");
   }
+}
+
+// Starting v0.6.3 all plugin codeNames were changed and
+// plugins_results renamed to plugin_search_results
+// and enabled_plugins shared settings is not needed anymore (wasn't used anyway)
+Future<void> updatePluginSettings() async {
+  logger.i("Upgrading to 0.6.3");
+  // Clear providers
+  await sharedStorage.setStringList("plugins_search_results", []);
+  await sharedStorage.setStringList("plugins_homepage", []);
+  await sharedStorage.setStringList("plugins_search_suggestions", []);
+
+  // Delete old key
+  await sharedStorage.remove("plugins_results");
+  // delete unused key
+  await sharedStorage.remove("enabled_plugins");
 }
