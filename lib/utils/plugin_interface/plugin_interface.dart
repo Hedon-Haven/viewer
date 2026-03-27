@@ -81,9 +81,12 @@ class PluginInterface {
   int get hashCode => codeName.hashCode;
 
   static bool codeNameIsValid(String codeName) {
-    final regex =
-        RegExp(r"^(?!.*\.\.)[A-Za-z0-9]+\.[A-Za-z0-9]+\.[A-Za-z0-9]+$");
-    return !regex.hasMatch(codeName);
+    // Matches exactly 3 alphanumeric segments separated by dots (e.g. "com.hedon_haven.tester").
+    // Segments may contain underscores internally, but not at the start or end.
+    // Dots are not allowed at the start, end, or consecutively.
+    final regex = RegExp(
+        r"^(?!.*\.\.)[A-Za-z0-9]([A-Za-z0-9_]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9_]*[A-Za-z0-9])?){2}$");
+    return regex.hasMatch(codeName);
   }
 
   bool _checkAndLoadFromConfig(String configPath) {
