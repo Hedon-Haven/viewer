@@ -2,422 +2,439 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
+import "package:path/path.dart" as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:synchronized/synchronized.dart';
 import 'package:yaml/yaml.dart';
 
+import '/services/icon_manager.dart';
+import '/utils/filesystem.dart';
 import '/utils/global_vars.dart';
 import '/utils/plugin_interface/plugin_interface.dart';
-import 'icon_manager.dart';
 import 'official_plugins_tracker.dart';
 
+enum ProviderType {
+  homepage,
+  searchSuggestions,
+  searchResults,
+}
+
 class PluginManager {
-  // make the plugin manager a singleton.
-  // This way any part of the app can access the plugins, without having to re-initialize them
-  static final PluginManager _instance = PluginManager._init();
+  /// Class-wide lock to only allow one operation at a time
+  static final Lock _lock = Lock();
 
-  PluginManager._init() {
-    discoverAndLoadPlugins();
-  }
-
-  factory PluginManager() {
-    return _instance;
-  }
+  // Internal vars
+  static Directory? _pluginsDir;
+  static Directory? _pluginCacheDir;
 
   /// Contains all PluginInterfaces of all valid plugins in the plugins dir, no matter if enabled or not
-  static List<PluginInterface> allPlugins = [];
+  static final Set<PluginInterface> _allPlugins = {};
 
-  /// List of all the currently enabled plugins (each plugin must serve as at least one provider), stored as PluginInterfaces and ready to be used
-  static List<PluginInterface> enabledPlugins = [];
+  /// All the currently enabled plugins (each plugin must serve as at least one provider), stored as PluginInterfaces and ready to be used
+  static final Set<PluginInterface> _enabledPlugins = {};
 
-  /// Map of all the plugins that failed to execute initPlugin() with the message to be displayed to the user
-  static Map<PluginInterface, Exception> unavailablePlugins = {};
+  /// All the plugins that failed to execute initPlugin() with the message to be displayed to the user
+  static final Map<PluginInterface, (Exception, String)> _failedPlugins = {};
 
-  /// List of all the currently enabled homepage providing plugins, stored as PluginInterfaces and ready to be used
-  static List<PluginInterface> enabledHomepageProviders = [];
-
-  /// List of all the currently enabled results providing plugins, stored as PluginInterfaces and ready to be used
-  static List<PluginInterface> enabledResultsProviders = [];
-
-  /// List of all the currently enabled search suggestions providing plugins, stored as PluginInterfaces and ready to be used
-  static List<PluginInterface> enabledSearchSuggestionsProviders = [];
-  static Directory pluginsDir = Directory("");
-
-  /// Map string names to the corresponding list of plugins
-  static final Map<String, List<PluginInterface>> _providerMap = {
-    "results": enabledResultsProviders,
-    "homepage": enabledHomepageProviders,
-    "search_suggestions": enabledSearchSuggestionsProviders
+  /// All the currently enabled plugins grouped by the provider type they serve
+  static final Map<ProviderType, Set<PluginInterface>> _providers = {
+    ProviderType.homepage: {},
+    ProviderType.searchSuggestions: {},
+    ProviderType.searchResults: {},
   };
 
-  /// Recursive function to copy a directory into another
-  /// Source: https://stackoverflow.com/a/76166248
-  static void copyDirectory(Directory source, Directory destination) {
-    /// create destination folder if not exist
-    if (!destination.existsSync()) {
-      destination.createSync(recursive: true);
-    }
-
-    /// get all files from source (recursive: false is important here)
-    source.listSync(recursive: false).forEach((entity) {
-      final newPath = destination.path +
-          Platform.pathSeparator +
-          entity.path.split(Platform.pathSeparator).last;
-      if (entity is File) {
-        entity.copySync(newPath);
-      } else if (entity is Directory) {
-        copyDirectory(entity, Directory(newPath));
+  /// Lock-safe function to re-discover all plugins and load according to settings in sharedStorage
+  /// Called once at app startup, but may be called again if needed
+  static Future<void> init() async {
+    await _lock.synchronized(() async {
+      // Set paths if not already set
+      if (_pluginsDir == null) {
+        Directory appSupportDir = await getApplicationSupportDirectory();
+        _pluginsDir = Directory(p.join(appSupportDir.path, "plugins"));
       }
+      if (_pluginCacheDir == null) {
+        Directory appCacheDir = await getApplicationCacheDirectory();
+        _pluginCacheDir = Directory(p.join(appCacheDir.path, "plugins"));
+      }
+
+      // Dispose all plugins before clearing
+      for (var plugin in _allPlugins) {
+        plugin.dispose();
+      }
+
+      // Clear plugin lists
+      _allPlugins.clear();
+      _enabledPlugins.clear();
+      _failedPlugins.clear();
+      for (var key in _providers.keys) {
+        _providers[key]!.clear();
+      }
+
+      // Read lists of all enabled plugins in settings
+      final Map<ProviderType, Set<String>> providerSettings = {
+        ProviderType.homepage:
+            (await sharedStorage.getStringList("plugins_homepage") ?? [])
+                .toSet(),
+        ProviderType.searchSuggestions:
+            (await sharedStorage.getStringList("plugins_search_suggestions") ??
+                    [])
+                .toSet(),
+        ProviderType.searchResults:
+            (await sharedStorage.getStringList("plugins_search_results") ?? [])
+                .toSet(),
+      };
+      final Set<String> pluginsToEnable =
+          providerSettings.values.expand((e) => e).toSet();
+      logger.d("Provider settings Map: $providerSettings");
+
+      _allPlugins.addAll(await getAllOfficialPlugins());
+      final officialPluginsCount = _allPlugins.length;
+      logger.d("Official plugins found: $_allPlugins "
+          "($officialPluginsCount)");
+
+      // If pluginsDir doesn't exist, no need to check for third party plugins inside it
+      logger.d("Looking for 3rd party plugins in ${_pluginsDir!.path}");
+      if (!(await _pluginsDir!.exists())) {
+        await _pluginsDir!.create();
+      } else {
+        await for (var dir
+            in _pluginsDir!.list().where((e) => e is Directory)) {
+          PluginInterface tempPlugin;
+          try {
+            tempPlugin = PluginInterface(dir.path);
+          } catch (e, st) {
+            logger
+                .e("Failed to load 3rd party plugin from ${dir.path}: $e\n$st");
+            if (e
+                .toString()
+                .startsWith("Exception: Failed to load from config file:")) {
+              // TODO: Show error message to user since we cant put it into the unavailablePlugins map
+            }
+            continue;
+          }
+
+          if (!_allPlugins.add(tempPlugin)) {
+            logger.w(
+                "3rd party plugin '${tempPlugin.codeName}' conflicts with an "
+                "existing plugin codeName — not adding!");
+            continue;
+          }
+        }
+      }
+      logger.d("3rd party plugins found in $_pluginsDir: "
+          "${_allPlugins.length - officialPluginsCount} "
+          "(${_allPlugins.length} total)");
+
+      for (var plugin in _allPlugins) {
+        // Init plugin only if its actually in use as a provider since keeping
+        // a bunch of isolates for unused 3rd party plugins is wasteful
+        if (!pluginsToEnable.contains(plugin.codeName)) {
+          logger.d(
+              "Plugin ${plugin.codeName} not in use, skipping initialization");
+          continue;
+        } else {
+          // Build provider set from settings
+          final providers = {
+            for (final entry in providerSettings.entries)
+              if (entry.value.contains(plugin.codeName)) entry.key,
+          };
+          try {
+            await _enablePlugin(plugin);
+            await _setAsProvider(plugin, providers);
+          } catch (_) {
+            // Ignore errors, already handled in the other functions
+          }
+        }
+      }
+
+      await _writeProvidersSetsToSettings();
+
+      logger.d("Finished reloading Plugins");
     });
   }
 
-  /// Discover all plugins and load according to settings in sharedStorage
-  static Future<void> discoverAndLoadPlugins() async {
-    logger.i("Discovering and loading plugins");
-    // Set pluginsDir if not already set
-    if (pluginsDir.path.isEmpty) {
-      // set pluginPath for the whole manager
-      Directory appSupportDir = await getApplicationSupportDirectory();
-      pluginsDir = Directory("${appSupportDir.path}/plugins");
-    }
+  /// Updates the providers list with the options for the passed plugin
+  /// Will enable/disable the plugin if needed
+  /// CAREFUL: Rethrows errors!
+  static Future<void> setAsProvider(
+      PluginInterface plugin, Set<ProviderType> provides) async {
+    await _lock.synchronized(() async {
+      await _setAsProvider(plugin, provides);
+      await _writeProvidersSetsToSettings();
+    });
+  }
 
-    // Get cache path
-    Directory cachePath = await getApplicationCacheDirectory();
-
-    // Empty plugin lists
-    allPlugins = [];
-    enabledPlugins = [];
-    enabledResultsProviders = [];
-    enabledHomepageProviders = [];
-    enabledSearchSuggestionsProviders = [];
-
-    // get list of all enabled plugins in settings
-    List<String> enabledResultsProvidersFromSettings =
-        await sharedStorage.getStringList("plugins_results") ?? [];
-    List<String> enabledHomepageProvidersFromSettings =
-        await sharedStorage.getStringList("plugins_homepage") ?? [];
-    List<String> enabledSearchSuggestionsProvidersFromSettings =
-        await sharedStorage.getStringList("plugins_search_suggestions") ?? [];
-    logger.d(
-        "Enabled results providers from settings: $enabledResultsProvidersFromSettings");
-    logger.d(
-        "Enabled homepage providers from settings: $enabledHomepageProvidersFromSettings");
-    logger.d(
-        "Enabled search suggestions providers from settings: $enabledSearchSuggestionsProvidersFromSettings");
-
-    // Init official plugins first
-    logger.i("Discovering official plugins");
-    for (var plugin in await getAllOfficialPlugins()) {
-      allPlugins.add(plugin);
-      if (enabledResultsProvidersFromSettings.contains(plugin.codeName) ||
-          enabledHomepageProvidersFromSettings.contains(plugin.codeName) ||
-          enabledSearchSuggestionsProvidersFromSettings
-              .contains(plugin.codeName)) {
-        try {
-          if (await plugin.init()) {
-            enabledPlugins.add(plugin);
-          }
-        } catch (e, stacktrace) {
-          logger.e("Failed to initiate previously enabled "
-              "${plugin.codeName}: $e\n$stacktrace");
-          unavailablePlugins[plugin] = e as Exception;
-        }
-
-        // create a separate cache dir for each plugin
-        Directory cacheDir =
-            Directory("${cachePath.path}/plugins/${plugin.codeName}");
-        if (!cacheDir.existsSync()) {
-          cacheDir.createSync(recursive: true);
-        }
+  /// NON-locked method that can only be called by other functions from this class
+  /// CAREFUL: rethrows Exceptions and doesn't handle any of them!
+  /// Will enable/disable plugin and add it to the correct provider Lists
+  static Future<void> _setAsProvider(
+      PluginInterface plugin, Set<ProviderType> provides) async {
+    if (provides.isEmpty) {
+      if (_enabledPlugins.contains(plugin)) {
+        logger.i(
+            "Disabling ${plugin.codeName} plugin due to empty providers set!");
+        await _disablePlugin(plugin);
+      } else {
+        logger.i("Empty providers passed and ${plugin.codeName} is already "
+            "disabled. Nothing to do.");
       }
-      if (enabledResultsProvidersFromSettings.contains(plugin.codeName)) {
-        enabledResultsProviders.add(plugin);
-      }
-      if (enabledHomepageProvidersFromSettings.contains(plugin.codeName)) {
-        enabledHomepageProviders.add(plugin);
-      }
-      if (enabledSearchSuggestionsProvidersFromSettings
-          .contains(plugin.codeName)) {
-        enabledSearchSuggestionsProviders.add(plugin);
-      }
-    }
-    logger.d("All loaded official plugins: $allPlugins");
-    logger.d("Enabled official plugins: $enabledPlugins");
-
-    // If pluginsDir doesn't exist, no need to check for third party plugins inside it
-    if (!pluginsDir.existsSync()) {
-      pluginsDir.createSync();
       return;
     }
 
-    // find third party plugins and load them
-    logger.i("Discovering third party plugins");
-    for (var dir in pluginsDir.listSync().whereType<Directory>()) {
-      // Check if dir is a valid plugin by trying to create a pluginInterface at that path
-      PluginInterface tempPlugin;
-      try {
-        tempPlugin = PluginInterface(dir.path);
-      } catch (e) {
-        if (e
-            .toString()
-            .startsWith("Exception: Failed to load from config file:")) {
-          // TODO: Show error to user and prompt user to uninstall plugin
-          logger.e(e);
-        } else {
-          rethrow;
-        }
-        continue;
-      }
-      if (await tempPlugin.init() == false) {
-        // TODO: Show error to user and prompt user to uninstall plugin
-        return;
-      }
-      allPlugins.add(tempPlugin);
-      if (enabledResultsProvidersFromSettings.contains(tempPlugin.codeName) ||
-          enabledHomepageProvidersFromSettings.contains(tempPlugin.codeName) ||
-          enabledSearchSuggestionsProvidersFromSettings
-              .contains(tempPlugin.codeName)) {
-        enabledPlugins.add(tempPlugin);
-        Directory cacheDir =
-            Directory("${cachePath.path}/plugins/${tempPlugin.codeName}");
-        if (!cacheDir.existsSync()) {
-          cacheDir.createSync(recursive: true);
-        }
-        // TODO: Pass cache path to plugin somehow
-      }
-      if (enabledResultsProvidersFromSettings.contains(tempPlugin.codeName)) {
-        enabledResultsProviders.add(tempPlugin);
-      }
-      if (enabledHomepageProvidersFromSettings.contains(tempPlugin.codeName)) {
-        enabledHomepageProviders.add(tempPlugin);
-      }
-      if (enabledSearchSuggestionsProvidersFromSettings
-          .contains(tempPlugin.codeName)) {
-        enabledSearchSuggestionsProviders.add(tempPlugin);
-      }
+    if (!_enabledPlugins.contains(plugin)) {
+      await _enablePlugin(plugin);
     }
-    logger.d("All plugins after loading third party: $allPlugins");
-    logger.d("Enabled plugins after loading third party: $enabledPlugins");
+
+    // Replace provider assignments
+    for (var set in _providers.values) {
+      set.remove(plugin);
+    }
+    for (final type in provides) {
+      _providers[type]!.add(plugin);
+    }
   }
 
-  static Future<bool> enablePlugin(PluginInterface plugin,
-      [bool enableAllProviders = true]) async {
+  /// Fully enables the plugin and adds it to all provider Lists
+  /// CAREFUL: rethrows Exceptions and doesn't handle any of them!
+  static Future<void> enablePlugin(PluginInterface plugin) async {
+    await _lock.synchronized(() async {
+      await _enablePlugin(plugin);
+      await _setAsProvider(plugin, {
+        ProviderType.homepage,
+        ProviderType.searchSuggestions,
+        ProviderType.searchResults
+      });
+      await _writeProvidersSetsToSettings();
+    });
+  }
+
+  /// NON-lock safe method for calling inside of this class
+  static Future<void> _enablePlugin(PluginInterface plugin) async {
+    Directory pluginCacheDir =
+        Directory(p.join(_pluginCacheDir!.path, plugin.codeName));
+    if (!(await pluginCacheDir.exists())) {
+      await pluginCacheDir.create(recursive: true);
+    }
+
     try {
-      await plugin.init();
-    } catch (e, stacktrace) {
-      logger.e("Failed to initiate ${plugin.codeName}: $e\n$stacktrace");
-      unavailablePlugins[plugin] = e as Exception;
+      await plugin.init(pluginCacheDir.path);
+    } catch (e, st) {
+      logger.e("Failed to initiate ${plugin.codeName} plugin: $e\n$st");
+      _failedPlugins[plugin] =
+          (e is Exception ? e : Exception(e.toString()), st.toString());
+      rethrow;
     }
-    logger.i("Plugin ${plugin.codeName} enabled successfully");
-    enabledPlugins.add(plugin);
-    await writePluginListToSettings();
-    if (enableAllProviders) {
-      logger.i("Enabling all providers for plugin ${plugin.codeName}");
-      enabledResultsProviders.add(plugin);
-      enabledHomepageProviders.add(plugin);
-      enabledSearchSuggestionsProviders.add(plugin);
-      await writeProvidersListToSettings("results");
-      await writeProvidersListToSettings("homepage");
-      await writeProvidersListToSettings("search_suggestions");
-    }
-    return true;
+    _enabledPlugins.add(plugin);
+    _failedPlugins.remove(plugin);
+    logger.d("Plugin ${plugin.codeName} initiated successfully");
   }
 
+  /// Fully disables the plugin and removes it from all provider sets
+  /// CAREFUL: rethrows Exceptions and doesn't handle any of them!
   static Future<void> disablePlugin(PluginInterface plugin) async {
-    enabledPlugins.remove(plugin);
-    enabledResultsProviders.remove(plugin);
-    enabledHomepageProviders.remove(plugin);
-    enabledSearchSuggestionsProviders.remove(plugin);
+    await _lock.synchronized(() async {
+      await _disablePlugin(plugin);
+      await _writeProvidersSetsToSettings();
+    });
+  }
+
+  /// NON-lock safe method for calling inside of this class
+  static Future<void> _disablePlugin(PluginInterface plugin) async {
+    for (var set in _providers.values) {
+      set.remove(plugin);
+    }
+    _enabledPlugins.remove(plugin);
+    _failedPlugins.remove(plugin);
     plugin.dispose();
     logger.i("Plugin ${plugin.codeName} disabled successfully");
-    writePluginListToSettings();
-    writeProvidersListToSettings("results");
-    writeProvidersListToSettings("homepage");
-    writeProvidersListToSettings("search_suggestions");
   }
 
-  /// ProviderType can be one of "results", "homepage" or "search_suggestions"
-  static Future<void> enableProvider(
-      PluginInterface plugin, String providerType) async {
-    // Check if provider is missing from all provider lists and need to be added to enabledPlugins
-    if (!_providerMap["results"]!.contains(plugin) &&
-        !_providerMap["homepage"]!.contains(plugin) &&
-        !_providerMap["search_suggestions"]!.contains(plugin)) {
-      enablePlugin(plugin, false);
+  static Future<void> deletePlugin(PluginInterface plugin) async {
+    if (plugin.isOfficialPlugin) {
+      logger.w("Can't delete official plugin ${plugin.codeName}!");
+      return;
     }
-    if (_providerMap.containsKey(providerType)) {
-      _providerMap[providerType]!.add(plugin);
-    } else {
-      throw Exception("Invalid provider type: $providerType");
-    }
-    logger.i("$providerType provider ${plugin.codeName} enabled successfully");
-    writeProvidersListToSettings(providerType);
-  }
-
-  /// ProviderType can be one of "results", "homepage" or "search_suggestions"
-  static Future<void> disableProvider(
-      PluginInterface plugin, String providerType) async {
-    if (_providerMap.containsKey(providerType)) {
-      _providerMap[providerType]!.remove(plugin);
-      // Check if plugin is missing from all provider lists
-      if (!_providerMap["results"]!.contains(plugin) &&
-          !_providerMap["homepage"]!.contains(plugin) &&
-          !_providerMap["search_suggestions"]!.contains(plugin)) {
-        disablePlugin(plugin);
-        return; // the disable plugin function will write the plugin list to settings automatically
-      }
-    } else {
-      throw Exception("Invalid provider type: $providerType");
-    }
-    logger.i("$providerType provider ${plugin.codeName} disabled successfully");
-    writeProvidersListToSettings(providerType);
-  }
-
-  static Future<void> writePluginListToSettings() async {
-    List<String> settingsList = [];
-    for (var plugin in enabledPlugins) {
-      settingsList.add(plugin.codeName);
-    }
-    logger.d("Writing plugins list to settings");
-    logger.d(settingsList);
-    sharedStorage.setStringList('enabled_plugins', settingsList);
-    // download plugin icons if they don't yet exist
-    downloadPluginIcons(force: true);
-  }
-
-  static Future<void> writeProvidersListToSettings(String providerType) async {
-    List<String> settingsList = [];
-    for (var plugin in _providerMap[providerType]!) {
-      settingsList.add(plugin.codeName);
-    }
-    logger.d("Writing $providerType providers list to settings");
-    logger.d(settingsList);
-    sharedStorage.setStringList("plugins_$providerType", settingsList);
-    // download plugin icons if they don't yet exist
-    downloadPluginIcons(force: true);
-  }
-
-  static PluginInterface? getPluginByName(String? name) {
-    if (name == null) {
-      return null;
-    }
-    for (var plugin in allPlugins) {
-      if (plugin.codeName == name) {
-        return plugin;
-      }
-    }
-    logger.e("Didn't find plugin with name: $name");
-    return null;
+    await _lock.synchronized(() async {
+      // Delete first to make sure that even if dispose fails,
+      // the plugin is still gone
+      await deleteDirectory(
+          Directory(p.join(_pluginsDir!.path, plugin.codeName)));
+      await _disablePlugin(plugin);
+      _allPlugins.remove(plugin);
+      await _writeProvidersSetsToSettings();
+    });
   }
 
   static Future<Map<String, dynamic>> extractPlugin(
       FilePickerResult? pickedFile) async {
+    // Check if plugin.yaml exists in the zip root before extracting
+    final archive = ZipDecoder()
+        .decodeBytes(await File(pickedFile!.files.single.path!).readAsBytes());
+    final hasPluginYaml =
+        archive.any((file) => file.isFile && file.name == "plugin.yaml");
+
+    if (!hasPluginYaml) {
+      logger.e("No plugin.yaml found in zip root!");
+      throw Exception("No plugin.yaml found in zip root!");
+    }
+
+    final String tempPath = await prepExtractDirFor3rdPartyPlugin();
     try {
-      // Create a temporary directory with random name to process the zip file
-      final tempDir = await getTemporaryDirectory();
-      final outputDir = Directory("${tempDir.path}/extracted_plugin");
-      logger.d("Deleting and recreating temp dir at ${outputDir.path}");
-      if (outputDir.existsSync()) {
-        outputDir.deleteSync(recursive: true);
-      }
-      await outputDir.create(recursive: true);
+      await extractZipTo(pickedFile.files.single.path!, tempPath);
+    } catch (e, st) {
+      await deleteDirectory(Directory(tempPath));
+      logger.e("Failed to extract plugin: $e\n$st");
+      throw Exception("Failed to extract plugin");
+    }
 
-      // Check if plugin.yaml exists in the zip root before extracting
-      final archive = ZipDecoder()
-          .decodeBytes(File(pickedFile!.files.single.path!).readAsBytesSync());
-      final hasPluginYaml =
-          archive.any((file) => file.isFile && file.name == "plugin.yaml");
+    // Parse yaml
+    YamlMap pluginConfig =
+        loadYaml(await File(p.join(tempPath, "plugin.yaml")).readAsString());
 
-      if (!hasPluginYaml) {
-        logger.e("No plugin.yaml found in zip root!");
-        throw Exception("No plugin.yaml found in zip root!");
-      }
+    final codeName = pluginConfig["metadata"]!["codeName"]!;
 
-      // Extract the contents of the zip file into the temp dir
-      for (final file in ZipDecoder()
-          .decodeBytes(File(pickedFile.files.single.path!).readAsBytesSync())) {
-        if (file.isFile) {
-          logger.d(
-              "Unpacking file ${file.name} to ${outputDir.path}/${file.name}");
-          final data = file.content as List<int>;
-          File("${outputDir.path}/${file.name}")
-            ..createSync(recursive: true)
-            ..writeAsBytesSync(data);
-        } else {
-          Directory("${outputDir.path}/${file.name}").create(recursive: true);
-        }
-      }
+    if (!PluginInterface.codeNameIsValid(codeName)) {
+      await deleteDirectory(Directory(tempPath));
+      logger.e("Invalid plugin codeName: $codeName");
+      throw Exception("Invalid plugin codeName: $codeName");
+    }
 
-      // Parse yaml
-      YamlMap pluginConfig =
-          loadYaml(File("${outputDir.path}/plugin.yaml").readAsStringSync());
-
+    return await _lock.synchronized(() async {
       // Check if plugin is already installed
       logger.d("Checking if plugin is already installed");
-      if (allPlugins.any((plugin) =>
-          plugin.codeName == pluginConfig["metadata"]["codeName"])) {
-        logger.w(
-            "${pickedFile.files.single.path} is already installed as ${pluginConfig["metadata"]["codeName"]}");
+      if (_allPlugins.any((plugin) =>
+          plugin.codeName == pluginConfig["metadata"]!["codeName"]!)) {
+        await deleteDirectory(Directory(tempPath));
+        logger.w("${pickedFile.files.single.path} is already installed as "
+            "${pluginConfig["metadata"]["codeName"]}! Removed temp files!");
         throw Exception(
             "AlreadyInstalled: ${pluginConfig["metadata"]["codeName"]}");
       }
 
       Map<String, dynamic> pluginConfigMap =
           Map<String, dynamic>.from(pluginConfig);
-      pluginConfigMap["tempPluginPath"] = outputDir.path;
+      pluginConfigMap["tempPluginPath"] = tempPath;
       return pluginConfigMap;
-    } catch (e) {
-      rethrow;
-    }
+    });
   }
 
-  static Future<bool> testExternalPlugin(Directory pluginDir) async {
-    if (!pluginDir.existsSync()) {
+  static Future<bool> test3rdPartyPlugin(Directory pluginDir) async {
+    if (!(await pluginDir.exists())) {
       throw Exception("Plugin directory ${pluginDir.path} does not exist");
     }
+    // Create temp cache dir for plugin
+    Directory tempCacheDir = Directory("${pluginDir.path}/cache");
+    logger.d("Creating cache dir ${tempCacheDir.path}");
+    await tempCacheDir.create();
+
+    bool testResult = false;
+    PluginInterface? tempPlugin;
     try {
-      var tempPlugin = PluginInterface(pluginDir.path);
-      return await tempPlugin.runFunctionalityTest();
-    } catch (e, stacktrace) {
-      logger.e("Failed to test plugin in ${pluginDir.path}: $e\n$stacktrace");
-      return false;
+      tempPlugin = PluginInterface(pluginDir.path);
+      await tempPlugin.init(tempCacheDir.path);
+      testResult = await tempPlugin.runFunctionalityTest();
+    } catch (e, st) {
+      logger.e("Failed to test plugin in ${pluginDir.path}: $e\n$st");
+    } finally {
+      tempPlugin?.dispose();
+      // remove cache dir to avoid copying it over if user decides to install
+      await deleteDirectory(tempCacheDir);
     }
+    logger.i("Functionality tests passed");
+    return testResult;
   }
 
+  /// Imports and fully enables the new plugin
   static Future<void> importPlugin(Map<String, dynamic> pluginConfig) async {
-    // Create plugin dir
-    String pluginCodeName = pluginConfig["metadata"]["codeName"];
-    Directory appSupportDir = await getApplicationSupportDirectory();
-    Directory pluginDir =
-        Directory("${appSupportDir.path}/plugins/$pluginCodeName");
-    Directory tempPluginPath = Directory(pluginConfig["tempPluginPath"]);
-    if (pluginDir.existsSync()) {
-      logger.w("Plugin directory ${pluginDir.path} for $pluginCodeName already"
-          " exists! Deleting directory + contents!");
-      pluginDir.deleteSync(recursive: true);
-    }
-
-    copyDirectory(tempPluginPath, pluginDir);
+    final String installedPath =
+        p.join(_pluginsDir!.path, pluginConfig["metadata"]["codeName"]);
+    await _lock.synchronized(() async {
+      try {
+        await forceCopyDirectory(Directory(pluginConfig["tempPluginPath"]),
+            Directory(installedPath));
+        PluginInterface newPlugin = PluginInterface(installedPath);
+        _allPlugins.add(newPlugin);
+        await _enablePlugin(newPlugin);
+        await _setAsProvider(newPlugin, {
+          ProviderType.homepage,
+          ProviderType.searchSuggestions,
+          ProviderType.searchResults
+        });
+        await _writeProvidersSetsToSettings();
+        await forceDownloadIconForPlugin(newPlugin);
+      } catch (e, stacktrace) {
+        await deleteDirectory(Directory(installedPath));
+        logger.e("Failed to import plugin "
+            "${pluginConfig["metadata"]["codeName"]} "
+            "(all plugin files deleted): $e\n$stacktrace");
+        rethrow;
+      } finally {
+        await deleteDirectory(Directory(pluginConfig["tempPluginPath"]));
+      }
+    });
   }
 
-  static Future<void> deletePlugin(PluginInterface plugin) async {
-    if (plugin.isOfficialPlugin) {
-      logger.w("Can't delete official plugins!");
-      return;
+  /// NON-locked function that writes the current providers sets as ABC sorted Lists to settings
+  static Future<void> _writeProvidersSetsToSettings() async {
+    logger.d("Writing provider Sets to settings");
+    await sharedStorage.setStringList(
+      "plugins_homepage",
+      _providers[ProviderType.homepage]!.map((p) => p.codeName).toList()
+        ..sort(),
+    );
+    await sharedStorage.setStringList(
+      "plugins_search_suggestions",
+      _providers[ProviderType.searchSuggestions]!
+          .map((p) => p.codeName)
+          .toList()
+        ..sort(),
+    );
+    await sharedStorage.setStringList(
+      "plugins_search_results",
+      _providers[ProviderType.searchResults]!.map((p) => p.codeName).toList()
+        ..sort(),
+    );
+  }
+
+  static Future<PluginInterface?> getPluginByName(String? name) async {
+    if (name == null) {
+      return null;
     }
+    return _lock.synchronized(() {
+      final plugin = _allPlugins.where((p) => p.codeName == name).firstOrNull;
+      if (plugin == null) {
+        logger.d("Didn't find plugin with name: $name");
+      }
+      return plugin;
+    });
+  }
 
-    await disablePlugin(plugin);
+  static Future<List<PluginInterface>> getAllPlugins() {
+    return _lock.synchronized(() => List.from(_allPlugins));
+  }
 
-    Directory appSupportDir = await getApplicationSupportDirectory();
-    Directory pluginDir =
-        Directory("${appSupportDir.path}/plugins/${plugin.codeName}");
-    if (pluginDir.existsSync()) {
-      logger.d("Deleting plugin directory ${pluginDir.path}");
-      pluginDir.deleteSync(recursive: true);
-    } else {
-      logger.w("Plugin directory ${pluginDir.path} does not exist; "
-          "cannot delete plugin!");
-    }
+  static Future<List<PluginInterface>> getFailedPlugins() {
+    return _lock.synchronized(() => _failedPlugins.keys.toList());
+  }
 
-    await discoverAndLoadPlugins();
+  static Future<(Exception, String)?> getPluginError(PluginInterface plugin) {
+    return _lock.synchronized(() => _failedPlugins[plugin]);
+  }
+
+  static Future<List<PluginInterface>> getEnabledPlugins() {
+    return _lock.synchronized(() => List.from(_enabledPlugins));
+  }
+
+  static Future<List<PluginInterface>> getProviders(ProviderType type) {
+    return _lock.synchronized(() => List.from(_providers[type]!));
+  }
+
+  /// Returns all the provider types the passed plugin is registered for
+  static Future<Set<ProviderType>> getEnabledProviderTypesOf(
+      PluginInterface plugin) {
+    return _lock.synchronized(() => {
+          for (final entry in _providers.entries)
+            if (entry.value.contains(plugin)) entry.key,
+        });
   }
 }
