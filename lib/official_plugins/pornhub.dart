@@ -23,9 +23,11 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   @override
   bool isInitialized = false;
   @override
-  String codeName = "pornhub-official";
+  String codeName = "com.hedon_haven.pornhub";
   @override
   String prettyName = "Pornhub.com";
+  @override
+  String developer = "Hedon Haven";
   @override
   Uri iconUrl = Uri.parse("https://www.pornhub.com/favicon.ico");
   @override

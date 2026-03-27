@@ -21,9 +21,11 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   bool isInitialized = false;
   @override
-  String codeName = "xhamster-official";
+  String codeName = "com.hedon_haven.xhamster";
   @override
   String prettyName = "xHamster.com";
+  @override
+  String developer = "Hedon Haven";
   @override
   Uri iconUrl = Uri.parse("https://xhamster.com/favicon.ico");
   @override

@@ -16,9 +16,11 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   bool isInitialized = false;
   @override
-  String codeName = "tester-official";
+  String codeName = "com.hedon_haven.tester_internal";
   @override
   String prettyName = "Tester plugin";
+  @override
+  String developer = "Hedon Haven";
   @override
   Uri iconUrl = Uri.parse("https://placehold.co/favicon.ico");
   @override
