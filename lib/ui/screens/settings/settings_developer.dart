@@ -115,7 +115,7 @@ class DeveloperScreen extends StatelessWidget {
                             title: const Text("Reset all settings to default"),
                             onTap: () async {
                               await setDefaultSettings(true);
-                              PluginManager.discoverAndLoadPlugins();
+                              await PluginManager.init();
                               showToast(
                                   "All settings have been reset. Reloading UI in 2 seconds",
                                   context);
@@ -143,7 +143,7 @@ class DeveloperScreen extends StatelessWidget {
                                   await getApplicationSupportDirectory();
                               await Directory("${appSupportDir.path}/plugins")
                                   .delete(recursive: true);
-                              await PluginManager.discoverAndLoadPlugins();
+                              await PluginManager.init();
                               showToast(
                                   "All third-party extensions have been deleted",
                                   context);

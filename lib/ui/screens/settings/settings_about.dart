@@ -79,7 +79,7 @@ class _AboutScreenState extends State<AboutScreen> {
                                     "general_enable_dev_options",
                                     devSettingsEnabled);
                                 // reload plugins to show TesterPlugin in release versions too
-                                PluginManager.discoverAndLoadPlugins();
+                                await PluginManager.init();
                                 showToast(
                                     "Dev settings ${devSettingsEnabled ? "enabled" : "disabled"}",
                                     context);
