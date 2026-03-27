@@ -63,9 +63,12 @@ void _setup(Map<String, dynamic> message) {
   });
 
   _runtime.onMessage("writeCacheFile", (dynamic args) {
+    final resolved = p.normalize(p.join(cachePath, message["filePath"]));
+    if (!resolved.startsWith(cachePath + p.separator)) {
+      return jsonEncode("Error: Invalid path");
+    }
     try {
-      // ignore: prefer_interpolation_to_compose_strings
-      final file = File(p.join(cachePath, message["filePath"]));
+      final file = File(resolved);
       file.createSync(recursive: true);
       file.writeAsBytesSync(base64Decode(message["base64EncodedContents"]));
     } catch (e, st) {
@@ -80,8 +83,12 @@ void _setup(Map<String, dynamic> message) {
   });
 
   _runtime.onMessage("readCacheFile", (dynamic args) {
+    final resolved = p.normalize(p.join(cachePath, message["filePath"]));
+    if (!resolved.startsWith(cachePath + p.separator)) {
+      return jsonEncode("Error: Invalid path");
+    }
     try {
-      final file = File(p.join(cachePath, message["filePath"]));
+      final file = File(resolved);
       return jsonEncode(base64Encode(file.readAsBytesSync()));
     } catch (e, st) {
       // Send error message back to main isolate
