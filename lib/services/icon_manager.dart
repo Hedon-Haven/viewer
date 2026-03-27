@@ -46,3 +46,31 @@ Future<void> downloadPluginIcons({bool force = false}) async {
   logger.i("Resetting icon cache counter");
   await sharedStorage.setInt("general_icon_cache_counter", 0);
 }
+
+Future<void> forceDownloadIconForPlugin(PluginInterface plugin) async {
+  logger.d("Downloading plugin icon for ${plugin.codeName}");
+
+  Directory cacheDir =
+      Directory(p.join((await getApplicationCacheDirectory()).path, "icons"));
+  // Create icon cache dir if it doesn't exist
+  if (!(await cacheDir.exists())) {
+    await cacheDir.create();
+  }
+
+  try {
+    http.Response response = await client.get(plugin.iconUrl);
+    if (response.statusCode == 200) {
+      logger.d(
+          "Saving icon for ${plugin.codeName} to ${cacheDir.path}/${plugin.codeName}");
+      await File("${cacheDir.path}/${plugin.codeName}")
+          .writeAsBytes(response.bodyBytes);
+    } else {
+      logger.w(
+          "Error downloading icon: ${response.statusCode} - ${response.reasonPhrase}");
+    }
+  } catch (e) {
+    logger.w("Error downloading icon: $e");
+  }
+
+  logger.d("Finished downloading plugin icon for ${plugin.codeName}");
+}
