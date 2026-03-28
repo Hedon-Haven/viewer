@@ -10,15 +10,15 @@ import '/utils/plugin_interface/plugin_interface.dart';
 
 Future<PluginInterface?> getOfficialPluginByName(String codename) async {
   switch (codename) {
-    case "tester-official":
+    case "com.hedon_haven.tester_internal":
       if (!(await sharedStorage.getBool("general_enable_dev_options"))!) {
         logger.e("Tester plugin requested in non-debug mode");
         throw Exception("Tester plugin requested in non-debug mode");
       }
       return TesterPlugin();
-    case "pornhub-official":
+    case "com.hedon_haven.pornhub":
       return PornhubPlugin();
-    case "xhamster-official":
+    case "com.hedon_haven.xhamster":
       return XHamsterPlugin();
     default:
       break;
@@ -35,9 +35,9 @@ Future<OfficialPlugin?> getOfficialPluginByNameAsOfficialPlugin(
         throw Exception("Tester plugin requested in non-debug mode");
       }
       return TesterPlugin();
-    case "pornhub-official":
+    case "com.hedon_haven.pornhub":
       return PornhubPlugin();
-    case "xhamster-official":
+    case "com.hedon_haven.xhamster":
       return XHamsterPlugin();
     default:
       break;
