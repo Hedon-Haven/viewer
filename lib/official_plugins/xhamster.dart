@@ -100,8 +100,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
       "authorPage": ["banner", "description", "rank", "lastViewed", "addedOn"]
     },
     "testingVideos": [
-      // This is the most watched video on xhamster in 2024
-      {"videoID": "xhnQh7b", "progressThumbnailsAmount": 839},
+      // This is an old video that uses the old progress thumbnail format
+      {"videoID": "13942649", "progressThumbnailsAmount": 1005},
       // This is a more recent video from the homepage
       {"videoID": "xhZiTRT", "progressThumbnailsAmount": 779}
     ],
