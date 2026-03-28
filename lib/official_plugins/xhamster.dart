@@ -127,124 +127,23 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   final String _userEndpoint = "https://xhamster.com/users/";
 
   Future<List<UniversalVideoPreview>> _parseVideoList(
-      List<Element> resultsList) async {
+      List<Map<String, dynamic>> resultsList,
+      {String? authorNamePassed,
+      String? authorIDPassed}) async {
     // convert the divs into UniversalSearchResults
     List<UniversalVideoPreview> results = [];
-    for (Element resultDiv in resultsList) {
-      // each result has 2 sub-divs
-      List<Element>? subElements = resultDiv.children;
-
-      String? iD = tryParse<String?>(
-          () => subElements[0].attributes['href']?.split("/").last);
-      String? title = tryParse<String?>(
-          () => subElements[1].querySelector('a')?.attributes['title']);
-
-      // Recently xhamster started including picture-videos instead of proper mp4s
-      // On newer videos previews are not available
-      String? previewVideo = tryParse<String?>(
-          () => subElements[0].attributes['data-previewvideo']);
-
-      // Scrape author
-      String? authorName = "Unknown amateur author";
-      String? authorID;
-      try {
-        Element? uploaderElement = subElements[1]
-            .querySelector('div[class="video-thumb-uploader"]')
-            ?.children[0];
-        if (uploaderElement != null) {
-          // Amateur videos don't have an uploader on the results page
-          if (!(uploaderElement.children.length == 1 &&
-              uploaderElement.children[0].className == "video-thumb-views")) {
-            Element? authorElement = uploaderElement
-                .querySelector('a[class="video-uploader__name"]');
-            authorName = authorElement?.text.trim();
-            authorID = authorElement?.attributes['href']
-                ?.replaceAll("/videos", "")
-                .split("/")
-                .last;
-          }
-        }
-      } catch (_) {}
+    for (Map<String, dynamic> element in resultsList) {
+      String? iD = element["pageURL"]?.split("-").last;
+      String? title = element["title"];
 
       // convert time string into int list
       Duration? duration;
       try {
-        List<int> durationList = subElements[0]
-            .querySelector('div[class="thumb-image-container__duration"]')!
-            .text
-            .trim()
-            .split(":")
-            .map((e) => int.parse(e))
-            .toList();
-        if (durationList.length == 2) {
-          duration = Duration(seconds: durationList[0] * 60 + durationList[1]);
-          // if there is an hour in the duration
-        } else if (durationList.length == 3) {
-          duration = Duration(
-              seconds: durationList[0] * 3600 +
-                  durationList[1] * 60 +
-                  durationList[2]);
-        }
+        Duration(seconds: element["duration"]);
       } catch (_) {}
 
-      // determine video resolution
-      bool virtualReality = false;
-      int? resolution;
-      try {
-        if (subElements[0].querySelector('i[class^="xh-icon"]') != null) {
-          switch (subElements[0]
-              .querySelector('i[class^="xh-icon"]')!
-              .attributes['class']!
-              .split(" ")[1]) {
-            case "beta-thumb-hd":
-              resolution = 720;
-            // TODO: Maybe somehow determine 1080p support?
-            case "beta-thumb-uhd":
-              resolution = 2160;
-            case "beta-thumb-vr":
-              virtualReality = true;
-          }
-        }
-      } catch (_) {}
-
-      // determine video views
-      int? views;
-      try {
-        String? viewsString = subElements[1]
-            .querySelector("div[class='video-thumb-views']")
-            ?.text
-            .trim()
-            .split(" views")[0];
-        // just added means 0
-        if (viewsString == "just added") {
-          views = 0;
-        } else if (viewsString != null) {
-          views = 0;
-          if (viewsString.endsWith("K")) {
-            if (viewsString.contains(".")) {
-              views = int.parse(viewsString.split(".")[1][0]) * 100;
-              // this is so that the normal step still works
-              // ignore: prefer_interpolation_to_compose_strings
-              viewsString = viewsString.split(".")[0] + " ";
-            }
-            views +=
-                int.parse(viewsString.substring(0, viewsString.length - 1)) *
-                    1000;
-          } else if (viewsString.endsWith("M")) {
-            if (viewsString.contains(".")) {
-              views = int.parse(viewsString.split(".")[1][0]) * 100000;
-              // this is so that the normal step still works
-              // ignore: prefer_interpolation_to_compose_strings
-              viewsString = viewsString.split(".")[0] + " ";
-            }
-            views +=
-                int.parse(viewsString.substring(0, viewsString.length - 1)) *
-                    1000000;
-          } else {
-            views = int.tryParse(viewsString);
-          }
-        }
-      } catch (_) {}
+      authorNamePassed ??=
+          element["landing"]?["name"] ?? "Unknown amateur author";
 
       UniversalVideoPreview uniResult = UniversalVideoPreview(
         // Don't enforce null safety here
@@ -252,21 +151,21 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
         iD: iD ?? "null",
         title: title ?? "null",
         plugin: this,
-        thumbnail: tryParse<String?>(
-            () => subElements[0].querySelector('img')?.attributes['src']),
-        previewVideo: tryParse(() => Uri.parse(previewVideo!)),
+        thumbnail: element["imageURL"],
+        previewVideo: Uri.tryParse(element["trailerURL"]),
         duration: duration,
-        viewsTotal: views,
+        viewsTotal: element["views"],
         ratingsPositivePercent: null,
-        maxQuality: resolution,
-        virtualReality: virtualReality,
-        authorName: authorName,
-        authorID: authorID,
-        verifiedAuthor:
-            authorName != null && authorName != "Unknown amateur author",
+        maxQuality: element["isUHD"] == true ? 2160 : null,
+        virtualReality: false,
+        authorName: authorNamePassed,
+        authorID:
+            authorIDPassed ?? element["landing"]?["link"]?.split("/")?.last,
+        verifiedAuthor: (element["landing"]?["type"] ?? "user") != "user" &&
+            authorNamePassed != "Unknown amateur author",
       );
 
-      // getHomepage and getSearchResults use the same _parseVideoList
+      // getHomepage, getSearchResults and getAuthorVideos use the same _parseVideoList
       // -> their ignore lists are the same
       // This will also set the scrapeFailMessage if needed
       uniResult.verifyScrapedData(
@@ -332,12 +231,14 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     if (resultHtml.outerHtml == "<html><head></head><body></body></html>") {
       throw Exception("Received empty html");
     }
-    // Filter out ads and non-video results
-    return _parseVideoList(resultHtml
-        .querySelector('div[data-block="mono"]')!
-        .querySelector(".thumb-list")!
-        .querySelectorAll('div[data-video-type="video"]')
-        .toList());
+
+    String jscript = resultHtml.querySelector('#initials-script')!.text;
+    Map<String, dynamic> jscriptMap = jsonDecode(
+        jscript.substring(jscript.indexOf("{"), jscript.indexOf('};') + 1));
+
+    return _parseVideoList(jscriptMap["layoutPage"]["videoListProps"]
+            ["videoThumbProps"]
+        .cast<Map<String, dynamic>>());
   }
 
   // downloadThumbnail is implemented at the OfficialPlugin level
@@ -378,12 +279,13 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
           "Error downloading html: ${response.statusCode} - ${response.reasonPhrase}");
     }
     Document resultHtml = parse(response.body);
-    // Filter out ads and non-video results
-    return _parseVideoList(resultHtml
-        .querySelector('div[data-block="trending"]')!
-        .querySelector(".thumb-list")!
-        .querySelectorAll('div[data-video-type="video"]')
-        .toList());
+
+    String jscript = resultHtml.querySelector('#initials-script')!.text;
+    Map<String, dynamic> jscriptMap = jsonDecode(
+        jscript.substring(jscript.indexOf("{"), jscript.indexOf('};') + 1));
+
+    return _parseVideoList(jscriptMap["searchResult"]["videoThumbProps"]
+        .cast<Map<String, dynamic>>());
   }
 
   @override
@@ -1144,7 +1046,9 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     }
 
     logger.d("Requesting $videosLink");
-    var response = await client.get(videosLink);
+    // Request mobile version to get the full jsonmap
+    var response = await client
+        .get(videosLink, headers: {"Cookie": "x_platform_switch=mobile"});
     if (response.statusCode != 200) {
       // 404 means both error and no videos in this case
       // -> return empty list instead of throwing exception
@@ -1162,18 +1066,34 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     debugCallback?.call(response.body);
     Document resultHtml = parse(response.body);
 
+    String jscript = resultHtml.querySelector('#initials-script')!.text;
+    Map<String, dynamic> jscriptMap = jsonDecode(
+        jscript.substring(jscript.indexOf("{"), jscript.indexOf('};') + 1));
+
+    // the Map layout varies -> just search through it to find the videoThumbProps List
+
+    // Stack-based iterative search
+    final stack = <Map<String, dynamic>>[jscriptMap];
+    List<Map<String, dynamic>>? videoThumbProps;
+    while (stack.isNotEmpty) {
+      final current = stack.removeLast();
+      if (current.containsKey("videoThumbProps")) {
+        videoThumbProps =
+            (current["videoThumbProps"] as List).cast<Map<String, dynamic>>();
+        break;
+      }
+      for (final value in current.values) {
+        if (value is Map<String, dynamic>) stack.add(value);
+      }
+    }
+
     if (authorPageLink.toString().contains("user")) {
-      return _parseVideoList(resultHtml
-          .querySelector('div[data-role="thumb-list-videos"]')!
-          .querySelectorAll('div[data-video-type="video"]')
-          .toList());
+      String authorName = jscriptMap["displayUserModel"]?["name"] ??
+          authorPageLink.toString().split("/").last;
+      return _parseVideoList(videoThumbProps!,
+          authorNamePassed: authorName, authorIDPassed: authorID);
     } else {
-      return _parseVideoList(resultHtml
-          .querySelector('div[data-role="video-section-content-role"]')!
-          .children
-          .first
-          .querySelectorAll('div[data-video-type="video"]')
-          .toList());
+      return _parseVideoList(videoThumbProps!);
     }
   }
 }
