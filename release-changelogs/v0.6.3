@@ -1,0 +1,24 @@
+- Fully rewrote PluginManager; moved filesystem ops to a separate class; made all functions lock-protected
+
+- Added JavaScript runtime support for third-party plugins
+- Implemented all functions in PluginInterface to work with external functions
+- Added more attributes (e.g. developer)
+- Added function to check codeName
+- Added safety to both init and dispose
+
+- Added `fromMap` to all universal formats
+- Set all mandatory fields as non-nullable
+
+- Updated xhamster scraping to new JSON maps; fixed `PreviewVideos` scraping reliability
+- Fix `progressThumbnail` position not updating immediately on drag start
+
+- Added share and open-in-browser to video fly-out menu
+- Improved `OptionsSwitch` util (generic leading icon)
+
+- Fixed settings not saving correctly
+- Reset DB due to schema changes; simplified update/continuity path; added upgrade step
+
+- disabled Google's encrypted dependency metadata blob for android
+- Updated official plugin codenames
+
+**Full Changelog**: https://github.com/Hedon-Haven/Hedon-Haven/compare/v0.6.2...v0.6.3
