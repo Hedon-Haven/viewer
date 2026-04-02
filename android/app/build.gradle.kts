@@ -79,6 +79,12 @@ android {
             manifestPlaceholders["appName"] = "Hedon Haven profile"
         }
     }
+
+    // Disable Google's encrypted dependency metadata blob
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 flutter {
