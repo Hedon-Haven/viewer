@@ -54,6 +54,7 @@ class PluginManager {
       }
       if (_pluginCacheDir == null) {
         Directory appCacheDir = await getApplicationCacheDirectory();
+        logger.i("Plugin cache dir: ${p.join(appCacheDir.path, "plugins")}");
         _pluginCacheDir = Directory(p.join(appCacheDir.path, "plugins"));
       }
 
