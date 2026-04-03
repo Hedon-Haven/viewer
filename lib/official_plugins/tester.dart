@@ -22,6 +22,8 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   String developer = "Hedon Haven";
   @override
+  String contactEmail = "contact@hedon-haven.top";
+  @override
   Uri iconUrl = Uri.parse("https://placehold.co/favicon.ico");
   @override
   String providerUrl = "https://tester-plugin.com";

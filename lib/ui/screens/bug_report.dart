@@ -8,9 +8,13 @@ import '/services/bug_report_manager.dart';
 import '/ui/utils/toast_notification.dart';
 import '/ui/widgets/alert_dialog.dart';
 import '/utils/global_vars.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 
 class BugReportScreen extends StatefulWidget {
   final List<Map<String, dynamic>> debugObject;
+
+  /// The plugin that is being reported
+  final PluginInterface? plugin;
 
   /// Message to include before debugObject Map
   final String? message;
@@ -18,14 +22,13 @@ class BugReportScreen extends StatefulWidget {
   /// Can be one of the following: "Graphical glitch", "Performance issue",
   /// "Plugin issue", "Functional issue", "UI/UX suggestion", "Other"
   final String? issueType;
-  bool? reportSent;
 
-  BugReportScreen(
+  const BugReportScreen(
       {super.key,
       required this.debugObject,
+      required this.plugin,
       this.message,
-      this.issueType,
-      this.reportSent});
+      this.issueType});
 
   @override
   State<BugReportScreen> createState() => _BugReportScreenState();
@@ -292,11 +295,12 @@ class _BugReportScreenState extends State<BugReportScreen> {
                       }
                       canPopYes = true;
                       submitReport(
-                        submissionType,
-                        issueType,
-                        generatedController.text,
-                        userInputController.text,
-                      )
+                              submissionType,
+                              issueType,
+                              generatedController.text,
+                              userInputController.text,
+                              widget.plugin?.contactEmail ??
+                                  "contact@hedon-haven.top")
                           .whenComplete(() => Navigator.of(context).pop(true))
                           .onError((error, stackTrace) =>
                               Navigator.of(context).pop(false));

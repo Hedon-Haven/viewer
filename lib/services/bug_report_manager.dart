@@ -11,7 +11,7 @@ String? _encodeQueryParameters(Map<String, String> params) {
 }
 
 Future<void> submitReport(String submissionType, String issueType,
-    String generatedBody, String userInput) async {
+    String generatedBody, String userInput, String contactEmail) async {
   switch (submissionType) {
     case "Anonymous report":
       logger.w("Anonymous reports not yet implemented");
@@ -20,7 +20,7 @@ Future<void> submitReport(String submissionType, String issueType,
       logger.i("Opening email client");
       await launchUrl(Uri(
         scheme: 'mailto',
-        path: 'contact@hedon-haven.top',
+        path: contactEmail,
         query: _encodeQueryParameters(<String, String>{
           'subject': issueType,
           'body': "$generatedBody\n\nAdditional information: \n$userInput"

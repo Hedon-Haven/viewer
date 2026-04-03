@@ -787,7 +787,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => BugReportScreen(
-                              debugObject: [videoMetadata.toMap()])));
+                              debugObject: [videoMetadata.toMap()],
+                              plugin: videoMetadata.plugin)));
                 },
               ))
             ]));
@@ -1102,9 +1103,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => BugReportScreen(
-                                            debugObject: [
-                                              commentsList[index].toMap()
-                                            ])))
+                                          debugObject: [
+                                            commentsList[index].toMap()
+                                          ],
+                                          plugin: commentsList[index].plugin,
+                                        )))
                             .then((value) => Navigator.of(context).pop()))
                   ],
                 );

@@ -27,6 +27,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   String developer = "Hedon Haven";
   @override
+  String contactEmail = "contact@hedon-haven.top";
+  @override
   Uri iconUrl = Uri.parse("https://xhamster.com/favicon.ico");
   @override
   String providerUrl = "https://xhamster.com";

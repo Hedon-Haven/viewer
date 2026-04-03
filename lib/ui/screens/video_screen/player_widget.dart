@@ -287,7 +287,9 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                                       builder: (context) => BugReportScreen(
                                               debugObject: [
                                                 widget.videoMetadata.toMap()
-                                              ])))
+                                              ],
+                                      plugin: widget.videoMetadata.plugin,
+                                      )))
                               .then((value) => Navigator.of(context).pop());
                         },
                       )
@@ -475,6 +477,7 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget> {
                 MaterialPageRoute(
                     builder: (context) => BugReportScreen(
                         debugObject: [widget.videoMetadata.toMap()],
+                        plugin: widget.videoMetadata.plugin,
                         message: videoPlayerError,
                         issueType: "Functional issue"))))
       ]

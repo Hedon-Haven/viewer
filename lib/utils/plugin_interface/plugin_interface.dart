@@ -33,6 +33,9 @@ class PluginInterface {
   /// Plugin developer name
   String developer = "";
 
+  /// Contact email (e.g. for bug reports)
+  String contactEmail = "";
+
   /// UpdateUri is optional. If provided, it will be used to check for updates.
   Uri? updateUrl;
 
@@ -102,6 +105,7 @@ class PluginInterface {
       prettyName = config["metadata"]["prettyName"];
       version = config["metadata"]["version"];
       developer = config["metadata"]["developer"];
+      contactEmail = config["metadata"]["contactEmail"];
       updateUrl = Uri.parse(config["metadata"]["updateUrl"]);
       iconUrl = Uri.parse(config["providerData"]["iconUrl"]);
       providerUrl = config["providerData"]["providerUrl"];

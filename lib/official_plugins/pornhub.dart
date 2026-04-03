@@ -29,6 +29,8 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   @override
   String developer = "Hedon Haven";
   @override
+  String contactEmail = "contact@hedon-haven.top";
+  @override
   Uri iconUrl = Uri.parse("https://www.pornhub.com/favicon.ico");
   @override
   String providerUrl = "https://www.pornhub.com";

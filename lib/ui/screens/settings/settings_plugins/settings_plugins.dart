@@ -142,6 +142,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
                               MaterialPageRoute(
                                   builder: (context) => BugReportScreen(
                                       debugObject: [],
+                                      plugin: _allPlugins[index],
                                       message: errorMessage,
                                       issueType: "Plugin issue")))
                           .then((value) => Navigator.pop(context));

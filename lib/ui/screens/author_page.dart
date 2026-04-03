@@ -640,7 +640,8 @@ class _AuthorPageScreenState extends State<AuthorPageScreen> {
                               context,
                               MaterialPageRoute(
                                   builder: (context) => BugReportScreen(
-                                      debugObject: [authorPage!.toMap()])));
+                                      debugObject: [authorPage!.toMap()],
+                                      plugin: authorPage?.plugin)));
                         },
                   child: Row(children: [
                     Icon(

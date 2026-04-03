@@ -107,6 +107,7 @@ class _ScrapingReportScreenState extends State<ScrapingReportScreen> {
                                     MaterialPageRoute(
                                         builder: (context) => BugReportScreen(
                                             debugObject: combined,
+                                            plugin: null,
                                             issueType: "Plugin issue")))
                                 .then((value) {
                               if (value) {
@@ -126,6 +127,7 @@ class _ScrapingReportScreenState extends State<ScrapingReportScreen> {
                                               widget.singleDebugObject!
                                             ],
                                             message: widget.singleMessage,
+                                            plugin: null,
                                             issueType: "Plugin issue")));
                           }
                         }))
@@ -179,6 +181,7 @@ class _ScrapingReportScreenState extends State<ScrapingReportScreen> {
                                       MaterialPageRoute(
                                           builder: (context) => BugReportScreen(
                                               debugObject: [debugObject],
+                                              plugin: null,
                                               issueType: "Plugin issue"))).then(
                                       (value) {
                                     if (value) {
@@ -254,6 +257,7 @@ class _ScrapingReportScreenState extends State<ScrapingReportScreen> {
                   MaterialPageRoute(
                       builder: (context) => BugReportScreen(
                           debugObject: [combined],
+                          plugin: null,
                           issueType: "Plugin issue"))).then((value) {
                 if (value) {
                   // clear all sections
@@ -292,6 +296,7 @@ class _ScrapingReportScreenState extends State<ScrapingReportScreen> {
                             MaterialPageRoute(
                                 builder: (context) => BugReportScreen(
                                     debugObject: [debugObject],
+                                    plugin: mpm.keys.elementAt(index),
                                     issueType: "Plugin issue"))).then((value) {
                           if (value) {
                             // pop the whole section
@@ -353,6 +358,7 @@ class _ScrapingReportScreenState extends State<ScrapingReportScreen> {
                   MaterialPageRoute(
                       builder: (context) => BugReportScreen(
                           debugObject: debugObjects,
+                          plugin: null,
                           issueType: "Plugin issue"))).then((value) {
                 if (value) {
                   // pop the whole sectionType
@@ -387,6 +393,7 @@ class _ScrapingReportScreenState extends State<ScrapingReportScreen> {
                                               debugObject: [
                                                 objects.elementAt(i).toMap()
                                               ],
+                                              plugin: null,
                                               issueType: "Plugin issue")))
                               .then((value) {
                             if (value) {
