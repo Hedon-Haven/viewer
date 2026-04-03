@@ -126,14 +126,13 @@ class PluginManager {
           "${_allPlugins.length - officialPluginsCount} "
           "(${_allPlugins.length} total)");
 
-      for (var plugin in _allPlugins) {
-        // Init plugin only if its actually in use as a provider since keeping
-        // a bunch of isolates for unused 3rd party plugins is wasteful
-        if (!pluginsToEnable.contains(plugin.codeName)) {
-          logger.d(
-              "Plugin ${plugin.codeName} not in use, skipping initialization");
-          continue;
-        } else {
+      // Init plugin only if its actually in use as a provider since keeping
+      // a bunch of isolates for unused 3rd party plugins is wasteful
+      // Also init in parallel
+      await Future.wait(
+        _allPlugins
+            .where((plugin) => pluginsToEnable.contains(plugin.codeName))
+            .map((plugin) async {
           // Build provider set from settings
           final providers = {
             for (final entry in providerSettings.entries)
@@ -145,9 +144,8 @@ class PluginManager {
           } catch (_) {
             // Ignore errors, already handled in the other functions
           }
-        }
-      }
-
+        }),
+      );
       await _writeProvidersSetsToSettings();
 
       logger.d("Finished reloading Plugins");
