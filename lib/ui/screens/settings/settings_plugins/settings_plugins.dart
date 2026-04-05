@@ -81,23 +81,20 @@ class _PluginsScreenState extends State<PluginsScreen> {
   }
 
   /// TODO: Prompt user to delete plugin if not official plugin
-  void _togglePlugin(
-      List<PluginInterface> _allPlugins, int pluginIndex, bool newState) async {
+  void _togglePlugin(PluginInterface plugin, bool newState) async {
     if (newState) {
       try {
-        await PluginManager.enablePlugin(_allPlugins[pluginIndex]);
+        await PluginManager.enablePlugin(plugin);
       } catch (e, st) {
         showToast(
-            "Failed to enable ${_allPlugins[pluginIndex].prettyName} due to $e\n$st",
-            context);
+            "Failed to enable ${plugin.prettyName} due to $e\n$st", context);
       }
     } else {
       try {
-        await PluginManager.disablePlugin(_allPlugins[pluginIndex]);
+        await PluginManager.disablePlugin(plugin);
       } catch (e, st) {
         showToast(
-            "Failed to disable ${_allPlugins[pluginIndex].prettyName} due to $e\n$st",
-            context);
+            "Failed to disable ${plugin.prettyName} due to $e\n$st", context);
       }
     }
     sendPluginsChangedEvent = true;
@@ -117,11 +114,11 @@ class _PluginsScreenState extends State<PluginsScreen> {
     _loadPluginLists();
   }
 
-  void _showPluginInitErrorDialog(int index) {
+  void _showPluginInitErrorDialog(PluginInterface plugin) {
     showDialog(
         context: context,
         builder: (BuildContext context) => FutureBuilder<(Exception, String)?>(
-            future: PluginManager.getPluginError(_allPlugins[index]),
+            future: PluginManager.getPluginError(plugin),
             builder: (context, snapshot) {
               final bool customException = snapshot.data != null
                   ? isCustomException(snapshot.data?.$1)
@@ -142,7 +139,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
                               MaterialPageRoute(
                                   builder: (context) => BugReportScreen(
                                       debugObject: [],
-                                      plugin: _allPlugins[index],
+                                      plugin: plugin,
                                       message: errorMessage,
                                       issueType: "Plugin issue")))
                           .then((value) => Navigator.pop(context));
@@ -156,7 +153,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                            "The ${_allPlugins[index].prettyName} plugin failed to initialize with the following error:",
+                            "The ${plugin.prettyName} plugin failed to initialize with the following error:",
                             style: Theme.of(context).textTheme.titleMedium),
                         SizedBox(height: 5),
                         TextFormField(
@@ -237,30 +234,26 @@ class _PluginsScreenState extends State<PluginsScreen> {
                           child: ListView.builder(
                         itemCount: _allPlugins.length,
                         itemBuilder: (context, index) {
-                          String title = _allPlugins[index].prettyName;
-                          String subTitle = _allPlugins[index].providerUrl;
+                          PluginInterface plugin = _allPlugins[index];
                           return OptionsSwitch(
                               // TODO: MAYBE: rework this UI Widget to make it more obvious to why its there and what it means
                               leadingWidget:
-                                  buildOptionsSwitchLeadingWidget(index),
+                                  buildOptionsSwitchLeadingWidget(plugin),
                               trailingWidget: IconButton(
                                   onPressed: () {
                                     showDialog(
                                         context: context,
                                         builder: (BuildContext context) =>
-                                            buildPluginOptions(
-                                                _allPlugins[index]));
+                                            buildPluginOptions(plugin));
                                   },
                                   icon: const Icon(Icons.settings)),
-                              title: title,
-                              subTitle: subTitle,
-                              switchState:
-                                  _enabledPlugins.contains(_allPlugins[index]),
-                              nonInteractive:
-                                  _failedPlugins.contains(_allPlugins[index]),
+                              title: plugin.prettyName,
+                              subTitle: plugin.providerUrl,
+                              switchState: _enabledPlugins.contains(plugin),
+                              nonInteractive: _failedPlugins.contains(plugin),
                               reduceHorizontalBordersOnly: true,
-                              onToggled: (toggleValue) => _togglePlugin(
-                                  _allPlugins, index, toggleValue));
+                              onToggled: (toggleValue) =>
+                                  _togglePlugin(plugin, toggleValue));
                         },
                       )),
                       if (widget.partOfOnboarding) ...[
@@ -312,11 +305,11 @@ class _PluginsScreenState extends State<PluginsScreen> {
                     ])))));
   }
 
-  Widget buildOptionsSwitchLeadingWidget(int index) {
-    return _failedPlugins.contains(_allPlugins[index])
+  Widget buildOptionsSwitchLeadingWidget(PluginInterface plugin) {
+    return _failedPlugins.contains(plugin)
         ? IconButton(
             color: Theme.of(context).colorScheme.primary,
-            onPressed: () => _showPluginInitErrorDialog(index),
+            onPressed: () => _showPluginInitErrorDialog(plugin),
             icon: Icon(
                 size: 30,
                 color: Theme.of(context).colorScheme.error,
@@ -327,24 +320,21 @@ class _PluginsScreenState extends State<PluginsScreen> {
             onPressed: () => showDialog(
                 context: context,
                 builder: (BuildContext context) => ThemedDialog(
-                    title: _allPlugins[index].isOfficialPlugin
+                    title: plugin.isOfficialPlugin
                         ? "Official plugin"
                         : "Third party plugin",
                     primaryText: "Ok",
                     onPrimary: () => Navigator.pop(context),
                     content: SingleChildScrollView(
-                        child: Text(_allPlugins[index].isOfficialPlugin
+                        child: Text(plugin.isOfficialPlugin
                             ? "This plugin was developed and tested by the official Hedon Haven developers."
-                            : "This plugin is from the third party developer ${_allPlugins[index].developer}")))),
+                            : "This plugin is from the third party developer ${plugin.developer}")))),
             icon: Icon(
                 size: 30,
-                color: _allPlugins[index].isOfficialPlugin
+                color: plugin.isOfficialPlugin
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.tertiary,
-                _allPlugins[index].isOfficialPlugin
-                    ? Icons.verified
-                    : Icons.extension),
-          );
+                plugin.isOfficialPlugin ? Icons.verified : Icons.extension));
   }
 
   Widget buildPluginOptions(PluginInterface plugin) {
