@@ -11,6 +11,36 @@ import 'package:system_info2/system_info2.dart';
 
 import '/utils/global_vars.dart';
 
+/// Pass the raw old and new version strings.
+/// Returns true if the new version is semantically higher
+bool newVersionIsHigher(String oldVersion, String newVersion) {
+  logger.i("Checking if $newVersion is higher than $oldVersion");
+  List<int> oldVersionList = [];
+  List<int> newVersionList = [];
+
+  try {
+    oldVersionList =
+        oldVersion.replaceAll("v", "").split('.').map(int.parse).toList();
+    newVersionList =
+        newVersion.replaceAll("v", "").split('.').map(int.parse).toList();
+  } on FormatException {
+    throw Exception("Invalid version format. Can't split into 3 integers");
+  }
+
+  // make sure both lists are exactly 3 elements long
+  if (oldVersionList.length != 3 || newVersionList.length != 3) {
+    throw Exception("Invalid version format. VersionList not exactly 3 long");
+  }
+
+  // compare versions
+  for (int i = 0; i < 3; i++) {
+    if (newVersionList[i] != oldVersionList[i]) {
+      return newVersionList[i] > oldVersionList[i];
+    }
+  }
+  return false;
+}
+
 class UpdateManager extends ChangeNotifier {
   String? latestTag;
   String? latestChangeLog;
@@ -53,42 +83,21 @@ class UpdateManager extends ChangeNotifier {
       throw Exception("Couldn't fetch $latestTag changelog");
     }
     latestChangeLog = responseChangelog.body.trim();
-    List<int> localVersionList = [];
-    List<int> remoteVersionList = [];
 
     try {
-      // convert to lists of integers
-      logger.d("Attempting to convert versions to list of integers");
-      logger.d("Current version: $localVersion");
-      // Print without leading "v"
-      logger.d("Remote version: ${latestTag!.substring(1)}");
-      localVersionList = localVersion.split('.').map(int.parse).toList();
-      // remove leading 'v'
-      remoteVersionList =
-          latestTag!.substring(1).split('.').map(int.parse).toList();
-    } on FormatException {
-      throw Exception("Invalid remote version format");
-    }
-
-    // make sure both lists are exactly 3 elements long
-    if (localVersionList.length != 3 || remoteVersionList.length != 3) {
-      throw Exception("Remote version format too long");
-    }
-
-    // compare versions
-    if (remoteVersionList[0] > localVersionList[0] ||
-        (remoteVersionList[0] == localVersionList[0] &&
-            remoteVersionList[1] > localVersionList[1]) ||
-        (remoteVersionList[0] == localVersionList[0] &&
-            remoteVersionList[1] == localVersionList[1] &&
-            remoteVersionList[2] > localVersionList[2])) {
-      print("Local version is lower, update available");
-    } else {
-      logger.i(
-          "Local version matches/higher remote version, no update available");
+      // compare versions
+      if (newVersionIsHigher(localVersion, latestTag!)) {
+        logger.i("Local version is lower, update available!");
+        return true;
+      } else {
+        logger.i(
+            "Local version matches/higher remote version, no update available");
+        return false;
+      }
+    } catch (e, st) {
+      logger.e("Error checking for updates: $e\n$st");
       return false;
     }
-    return true;
   }
 
   Future<void> downloadAndInstallUpdate(String releaseTag) async {
