@@ -44,12 +44,24 @@ Future<void> deleteDirectory(Directory directory) async {
   }
 }
 
+/// Returns a temporary file with a random name that can be written to
+Future<String> getTempFile() async {
+  final tempDir = await getTemporaryDirectory();
+  final String random =
+      String.fromCharCodes(List.generate(5, (_) => Random().nextInt(26) + 97));
+  final tempFile = File("${tempDir.path}/temp_file_$random");
+  logger.d("Creating temp file at ${tempFile.path}");
+  await tempFile.create(recursive: true);
+  return tempFile.path;
+}
+
+/// Returns a random temporary directory to extract plugin.zips into
 Future<String> getExtractTempDir() async {
   final tempDir = await getTemporaryDirectory();
   final String random =
       String.fromCharCodes(List.generate(5, (_) => Random().nextInt(26) + 97));
   final outputDir = Directory("${tempDir.path}/extracted_plugin/$random");
-  logger.d("Deleting and recreating temp dir at ${outputDir.path}");
+  logger.d("Creating temp dir at ${outputDir.path}");
   await outputDir.create(recursive: true);
   return outputDir.path;
 }
