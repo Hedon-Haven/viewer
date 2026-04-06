@@ -277,7 +277,7 @@ class PluginManager {
       throw Exception("No plugin.yaml found in zip root!");
     }
 
-    final String tempPath = await prepExtractDirFor3rdPartyPlugin();
+    final String tempPath = await getExtractTempDir();
     try {
       await extractZipTo(pickedFile.files.single.path!, tempPath);
     } catch (e, st) {

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
@@ -43,11 +44,12 @@ Future<void> deleteDirectory(Directory directory) async {
   }
 }
 
-Future<String> prepExtractDirFor3rdPartyPlugin() async {
+Future<String> getExtractTempDir() async {
   final tempDir = await getTemporaryDirectory();
-  final outputDir = Directory("${tempDir.path}/extracted_plugin");
+  final String random =
+      String.fromCharCodes(List.generate(5, (_) => Random().nextInt(26) + 97));
+  final outputDir = Directory("${tempDir.path}/extracted_plugin/$random");
   logger.d("Deleting and recreating temp dir at ${outputDir.path}");
-  await deleteDirectory(outputDir);
   await outputDir.create(recursive: true);
   return outputDir.path;
 }
