@@ -25,6 +25,7 @@ class PluginsScreen extends StatefulWidget {
 class _PluginsScreenState extends State<PluginsScreen> {
   /// To avoid sending multiple events if multiple plugins/settings are changed
   bool sendPluginsChangedEvent = false;
+  bool checkingForUpdatesInProgress = false;
   String? pluginCodeNameInProgress;
 
   // Cached lists from PluginManager
@@ -274,48 +275,14 @@ class _PluginsScreenState extends State<PluginsScreen> {
             sendPluginsChangedEvent ? reloadVideoListEvent.add(null) : null,
         child: Scaffold(
             appBar: AppBar(
-              // Hide back button in onboarding
-              automaticallyImplyLeading: !widget.partOfOnboarding,
-              iconTheme:
-                  IconThemeData(color: Theme.of(context).colorScheme.primary),
-              title: widget.partOfOnboarding
-                  ? Center(child: Text("Plugins"))
-                  : const Text("Plugins"),
-              actions: [
-                IconButton(
-                  icon: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Icon(Icons.extension),
-                      Positioned(
-                        right: -8,
-                        bottom: -8,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Icon(Icons.circle,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.surface),
-                            Icon(Icons.add, size: 18),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  onPressed: pluginCodeNameInProgress != null
-                      ? null
-                      : () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      Install3rdPartyPluginScreen())).then((_) {
-                            _loadPluginLists();
-                          });
-                        },
-                ),
-              ],
-            ),
+                // Hide back button in onboarding
+                automaticallyImplyLeading: !widget.partOfOnboarding,
+                iconTheme:
+                    IconThemeData(color: Theme.of(context).colorScheme.primary),
+                title: widget.partOfOnboarding
+                    ? Center(child: Text("Plugins"))
+                    : const Text("Plugins"),
+                actions: buildAdditionalOptionsButton()),
             body: SafeArea(
                 child: Padding(
                     padding: const EdgeInsets.all(8),
@@ -422,6 +389,68 @@ class _PluginsScreenState extends State<PluginsScreen> {
                             ]))
                       ]
                     ])))));
+  }
+
+  List<Widget> buildAdditionalOptionsButton() {
+    if (checkingForUpdatesInProgress) {
+      return [CircularProgressIndicator(padding: const EdgeInsets.all(10))];
+    }
+    return [
+      PopupMenuButton<String>(
+          enabled: pluginCodeNameInProgress == null,
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(Icons.extension),
+              Positioned(
+                right: -8,
+                bottom: -8,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(Icons.circle,
+                        size: 18, color: Theme.of(context).colorScheme.surface),
+                    Icon(Icons.add, size: 18),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          offset: Offset(0, 50),
+          color: Theme.of(context).colorScheme.surfaceVariant,
+          itemBuilder: (context) => [
+                PopupMenuItem(
+                    onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    Install3rdPartyPluginScreen())).then((_) {
+                          _loadPluginLists();
+                        }),
+                    child: Row(spacing: 10, children: [
+                      Icon(Icons.add),
+                      Text("Install new plugin")
+                    ])),
+                PopupMenuItem(
+                    onTap: () async {
+                      setState(() => checkingForUpdatesInProgress = true);
+                      await PluginManager.checkForPluginUpdates();
+                      setState(() => checkingForUpdatesInProgress = false);
+                    },
+                    child: Row(spacing: 10, children: [
+                      Icon(Icons.update),
+                      Text("Check for plugin updates")
+                    ])),
+                PopupMenuItem(
+                    onTap: () => showToast(
+                        "Not yet implemented, please click each update manually",
+                        context),
+                    child: Row(spacing: 10, children: [
+                      Icon(Icons.system_update_alt),
+                      Text("Update all plugins")
+                    ])),
+              ])
+    ];
   }
 
   Widget buildOptionsSwitchLeadingWidget(PluginInterface plugin) {
