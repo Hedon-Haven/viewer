@@ -25,22 +25,26 @@ class PluginsScreen extends StatefulWidget {
 class _PluginsScreenState extends State<PluginsScreen> {
   /// To avoid sending multiple events if multiple plugins/settings are changed
   bool sendPluginsChangedEvent = false;
+  String? pluginCodeNameInProgress;
 
   // Cached lists from PluginManager
   List<PluginInterface> _allPlugins = [];
   List<PluginInterface> _enabledPlugins = [];
   List<PluginInterface> _failedPlugins = [];
+  List<PluginInterface> _updatablePlugins = [];
 
   Future<void> _loadPluginLists() async {
-    final (all, enabled, failed) = await (
+    final (all, enabled, failed, updatable) = await (
       PluginManager.getAllPlugins(),
       PluginManager.getEnabledPlugins(),
-      PluginManager.getFailedPlugins()
+      PluginManager.getFailedPlugins(),
+      PluginManager.getUpdatablePlugins()
     ).wait;
     setState(() {
       _allPlugins = all;
       _enabledPlugins = enabled;
       _failedPlugins = failed;
+      _updatablePlugins = updatable;
     });
   }
 
@@ -48,6 +52,12 @@ class _PluginsScreenState extends State<PluginsScreen> {
   void initState() {
     super.initState();
     _loadPluginLists();
+
+    // Reload plugin lists if updates become available
+    pluginUpdatesAvailableEvent.stream.listen((_) async {
+      await _loadPluginLists();
+      setState(() {});
+    });
   }
 
   void handleNextButton() async {
@@ -112,6 +122,42 @@ class _PluginsScreenState extends State<PluginsScreen> {
     await PluginManager.setAsProvider(plugin, provides);
     sendPluginsChangedEvent = true;
     _loadPluginLists();
+  }
+
+  /// Manages updating one plugin at a time
+  Future<void> _updateSinglePlugin(PluginInterface plugin) async {
+    setState(() => pluginCodeNameInProgress = plugin.codeName);
+    try {
+      await PluginManager.updatePlugin(plugin);
+    } catch (e, st) {
+      showErrorDialog("Failed to update ${plugin.prettyName}",
+          "Failed to update ${plugin.prettyName} due to $e\n$st");
+    }
+    setState(() => pluginCodeNameInProgress = null);
+  }
+
+  void showErrorDialog(String title, String message) async {
+    await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return ThemedDialog(
+            title: title,
+            primaryText: "Ok",
+            onPrimary: () {
+              Navigator.pop(context);
+            },
+            content: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(5.0),
+              ),
+              padding: const EdgeInsets.all(5.0),
+              child: Text(message.trim(),
+                  style: Theme.of(context).textTheme.bodyMedium),
+            ),
+          );
+        });
   }
 
   void _showPluginInitErrorDialog(PluginInterface plugin) {
@@ -179,6 +225,49 @@ class _PluginsScreenState extends State<PluginsScreen> {
             }));
   }
 
+  void showPluginUpdateDialog(PluginInterface plugin) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) => FutureBuilder<UpdateInfo?>(
+            future: PluginManager.getUpdateInfoFor(plugin),
+            builder: (context, snapshot) {
+              // Don't show anything until the future is done
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox();
+              }
+              final UpdateInfo updateInfo = snapshot.data!;
+              final String details = "Codename: ${plugin.codeName}\n"
+                  "Provides: ${plugin.providerUrl}\n\n"
+                  "Changelog for ${plugin.version} -> ${updateInfo.newVersion}:\n"
+                  "${updateInfo.changelog.map((s) => "• $s").join("\n")}\n\n"
+                  "Download URL: ${updateInfo.downloadUrl}";
+              return ThemedDialog(
+                  title: "Update ${plugin.prettyName}",
+                  primaryText: "Download and install",
+                  onPrimary: () {
+                    // Start update but don't wait for it to finish and immediately close dialog
+                    _updateSinglePlugin(plugin);
+                    Navigator.of(context).pop();
+                  },
+                  secondaryText: "Cancel",
+                  onSecondary: Navigator.of(context).pop,
+                  content: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(
+                        "An update is available for ${plugin.prettyName}. Update now?"),
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(5.0),
+                      ),
+                      padding: const EdgeInsets.all(5.0),
+                      child: SelectableText(details,
+                          style: Theme.of(context).textTheme.bodySmall),
+                    ),
+                  ]));
+            }));
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -214,15 +303,17 @@ class _PluginsScreenState extends State<PluginsScreen> {
                       ),
                     ],
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                Install3rdPartyPluginScreen())).then((_) {
-                      _loadPluginLists();
-                    });
-                  },
+                  onPressed: pluginCodeNameInProgress != null
+                      ? null
+                      : () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      Install3rdPartyPluginScreen())).then((_) {
+                            _loadPluginLists();
+                          });
+                        },
                 ),
               ],
             ),
@@ -239,18 +330,47 @@ class _PluginsScreenState extends State<PluginsScreen> {
                               // TODO: MAYBE: rework this UI Widget to make it more obvious to why its there and what it means
                               leadingWidget:
                                   buildOptionsSwitchLeadingWidget(plugin),
-                              trailingWidget: IconButton(
-                                  onPressed: () {
-                                    showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) =>
-                                            buildPluginOptions(plugin));
-                                  },
-                                  icon: const Icon(Icons.settings)),
+                              trailingWidget: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (_updatablePlugins.contains(plugin))
+                                      pluginCodeNameInProgress ==
+                                              plugin.codeName
+                                          ? CircularProgressIndicator()
+                                          : IconButton(
+                                              onPressed:
+                                                  pluginCodeNameInProgress !=
+                                                          null
+                                                      ? null
+                                                      : () =>
+                                                          showPluginUpdateDialog(
+                                                              plugin),
+                                              icon: Icon(
+                                                Icons.download,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .error,
+                                              )),
+                                    IconButton(
+                                        onPressed:
+                                            pluginCodeNameInProgress != null
+                                                ? null
+                                                : () {
+                                                    showDialog(
+                                                        context: context,
+                                                        builder: (BuildContext
+                                                                context) =>
+                                                            buildPluginOptions(
+                                                                plugin));
+                                                  },
+                                        icon: const Icon(Icons.settings))
+                                  ]),
                               title: plugin.prettyName,
                               subTitle: plugin.providerUrl,
                               switchState: _enabledPlugins.contains(plugin),
-                              nonInteractive: _failedPlugins.contains(plugin),
+                              nonInteractive:
+                                  pluginCodeNameInProgress != null ||
+                                      _failedPlugins.contains(plugin),
                               reduceHorizontalBordersOnly: true,
                               onToggled: (toggleValue) =>
                                   _togglePlugin(plugin, toggleValue));
