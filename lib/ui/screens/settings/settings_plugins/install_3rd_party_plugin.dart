@@ -190,7 +190,7 @@ class _Install3rdPartyPluginScreenState
   void importPlugin() async {
     setState(() => isImportingPlugin = true);
     try {
-      await PluginManager.importPlugin(pluginConfigMap!);
+      await PluginManager.importNewPlugin(pluginConfigMap!);
       // Tell videoLists to update
       reloadVideoListEvent.add(null);
       setState(() => isImportingPlugin = false);

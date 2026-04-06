@@ -343,15 +343,13 @@ class PluginManager {
   }
 
   /// Imports and fully enables the new plugin
-  static Future<void> importPlugin(Map<String, dynamic> pluginConfig) async {
+  static Future<void> importNewPlugin(Map<String, dynamic> pluginConfig) async {
     final String installedPath =
         p.join(_pluginsDir!.path, pluginConfig["metadata"]["codeName"]);
     await _lock.synchronized(() async {
       try {
-        await forceCopyDirectory(Directory(pluginConfig["tempPluginPath"]),
-            Directory(installedPath));
-        PluginInterface newPlugin = PluginInterface(installedPath);
-        _allPlugins.add(newPlugin);
+        PluginInterface newPlugin =
+            await _importPlugin(pluginConfig["tempPluginPath"], installedPath);
         await _enablePlugin(newPlugin);
         await _setAsProvider(newPlugin, {
           ProviderType.homepage,
@@ -359,7 +357,6 @@ class PluginManager {
           ProviderType.searchResults
         });
         await _writeProvidersSetsToSettings();
-        await forceDownloadIconForPlugin(newPlugin);
       } catch (e, stacktrace) {
         await deleteDirectory(Directory(installedPath));
         logger.e("Failed to import plugin "
@@ -372,6 +369,15 @@ class PluginManager {
     });
   }
 
+  /// Imports the plugin from temp directory into the passed path
+  static Future<PluginInterface> _importPlugin(
+      String tempDir, String installPath) async {
+    await forceCopyDirectory(Directory(tempDir), Directory(installPath));
+    PluginInterface newPlugin = PluginInterface(installPath);
+    _allPlugins.add(newPlugin);
+    await forceDownloadIconForPlugin(newPlugin);
+    return newPlugin;
+  }
   /// NON-locked function that writes the current providers sets as ABC sorted Lists to settings
   static Future<void> _writeProvidersSetsToSettings() async {
     logger.d("Writing provider Sets to settings");
