@@ -80,6 +80,7 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
   /// Whether the app should stop showing a fake screen
   bool concealApp = true;
   bool updateAvailable = false;
+  bool showSettingsBadge = false;
   UpdateManager updateManager = UpdateManager();
 
   Future<bool> onboardingCompleted = sharedStorage
@@ -127,6 +128,10 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
     // Add global key handling for desktop
     escapeHandler = (event) => handleEscape(event, materialAppKey);
     HardwareKeyboard.instance.addHandler(escapeHandler);
+
+    // Enable badge when plugin update check finishes and updates are available
+    pluginUpdatesAvailableEvent.stream
+        .listen((value) => setState(() => showSettingsBadge = value != 0));
 
     performUpdate();
   }
@@ -314,9 +319,14 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
                 label: "Library",
               ),
               NavigationDestination(
-                icon: _selectedIndex == 2
-                    ? const Icon(Icons.settings)
-                    : const Icon(Icons.settings_outlined),
+                icon: Badge(
+                  isLabelVisible: showSettingsBadge,
+                  smallSize: 10,
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: _selectedIndex == 2
+                      ? const Icon(Icons.settings)
+                      : const Icon(Icons.settings_outlined),
+                ),
                 label: "Settings",
               ),
             ],

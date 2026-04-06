@@ -18,6 +18,17 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  bool showPluginsBadge = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Enable badge when plugin update check finishes and updates are available
+    pluginUpdatesAvailableEvent.stream
+        .listen((value) => setState(() => showPluginsBadge = value != 0));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,7 +47,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: const Text("Plugins"),
                     subtitle: const Text(
                         "Enable/disable plugins, set plugin options"),
-                    leading: const Icon(Icons.extension),
+                    leading: Badge(
+                        isLabelVisible: showPluginsBadge,
+                        smallSize: 10,
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: const Icon(Icons.extension)),
                     onTap: () {
                       Navigator.push(
                           context,
