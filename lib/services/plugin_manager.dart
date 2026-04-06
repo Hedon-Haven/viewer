@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:file_picker/file_picker.dart';
 import "package:path/path.dart" as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:synchronized/synchronized.dart';
@@ -265,10 +264,10 @@ class PluginManager {
   }
 
   static Future<Map<String, dynamic>> extractPlugin(
-      FilePickerResult? pickedFile) async {
+      String pickedFilePath) async {
     // Check if plugin.yaml exists in the zip root before extracting
-    final archive = ZipDecoder()
-        .decodeBytes(await File(pickedFile!.files.single.path!).readAsBytes());
+    final archive =
+        ZipDecoder().decodeBytes(await File(pickedFilePath).readAsBytes());
     final hasPluginYaml =
         archive.any((file) => file.isFile && file.name == "plugin.yaml");
 
@@ -279,7 +278,7 @@ class PluginManager {
 
     final String tempPath = await getExtractTempDir();
     try {
-      await extractZipTo(pickedFile.files.single.path!, tempPath);
+      await extractZipTo(pickedFilePath, tempPath);
     } catch (e, st) {
       await deleteDirectory(Directory(tempPath));
       logger.e("Failed to extract plugin: $e\n$st");
@@ -304,7 +303,7 @@ class PluginManager {
       if (_allPlugins.any((plugin) =>
           plugin.codeName == pluginConfig["metadata"]!["codeName"]!)) {
         await deleteDirectory(Directory(tempPath));
-        logger.w("${pickedFile.files.single.path} is already installed as "
+        logger.w("$pickedFilePath is already installed as "
             "${pluginConfig["metadata"]["codeName"]}! Removed temp files!");
         throw Exception(
             "AlreadyInstalled: ${pluginConfig["metadata"]["codeName"]}");
