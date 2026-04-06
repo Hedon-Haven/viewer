@@ -18,50 +18,50 @@ class PluginInterface {
   /// Whether the plugin has already been initialized
   bool isInitialized = false;
 
-  /// codeName must be a unique identifier for the plugin, to avoid conflicts,
-  /// especially if the plugin overrides an official plugin. Cannot be empty
-  /// Cannot contain spaces, special chars or non-latin characters, as its used
-  /// as the directory name for the plugin.
-  String codeName = "";
+  /// codeName must be a unique identifier for the plugin, to avoid conflicts.
+  /// 3 alphanumeric segments separated by dots, underscores allowed mid-word,
+  /// e.g. "com.hedon_haven.tester".
+  /// Cannot conflict with official, internal plugins
+  late String codeName;
 
   /// prettyName must be the official, correctly cased name of the provider. Cannot be empty
-  String prettyName = "";
+  late String prettyName;
 
   /// Plugin version
-  String version = "";
+  late String version;
 
   /// Plugin developer name
-  String developer = "";
+  late String developer;
 
   /// Contact email (e.g. for bug reports)
-  String contactEmail = "";
+  late String contactEmail;
 
   /// Short description (e.g. to mention functionality limitations)
-  String description = "";
+  late String description;
 
   /// UpdateUri is optional. If provided, it will be used to check for updates.
   Uri? updateUrl;
 
   /// Icon must point to a small icon of the website, preferably the favicon
-  Uri iconUrl = Uri.parse("");
+  late Uri iconUrl;
 
   /// The base website url of the plugin provider, as a string. Example: https://example.com
-  String providerUrl = "";
+  late String providerUrl;
 
   /// Initial homepage number
-  int initialHomePage = 0;
+  late int initialHomePage;
 
   /// Initial search page number
-  int initialSearchResultsPage = 0;
+  late int initialSearchResultsPage;
 
   /// Initial comment page number
-  int initialCommentsPage = 0;
+  late int initialCommentsPage;
 
   /// Initial video suggestions page number
-  int initialVideoSuggestionsPage = 0;
+  late int initialVideoSuggestionsPage;
 
   /// Initial video suggestions page number
-  int initialAuthorVideosPage = 0;
+  late int initialAuthorVideosPage;
 
   // Internal variables
   /// The path to the root of the plugin
