@@ -135,7 +135,7 @@ class _Install3rdPartyPluginScreenState
       var selectedFile = await FilePicker.platform
           .pickFiles(type: FileType.custom, allowedExtensions: ["zip"]);
       pluginConfigMap =
-          await PluginManager.extractPlugin(selectedFile!.files.single.path!);
+          await PluginManager.extractNewPlugin(selectedFile!.files.single.path!);
       configFormatted = "Name: ${pluginConfigMap!["metadata"]["prettyName"]} "
           "(${pluginConfigMap!["metadata"]["codeName"]})"
           "\nProvider: ${pluginConfigMap!["providerData"]["providerUrl"]}"

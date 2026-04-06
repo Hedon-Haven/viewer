@@ -263,14 +263,36 @@ class PluginManager {
     });
   }
 
-  static Future<Map<String, dynamic>> extractPlugin(
+  /// Extracts the plugin to a temp dir and returns parsed plugin.yaml Map with temp dir path
+  /// Also makes sure the plugin is not already installed
+  static Future<Map<String, dynamic>> extractNewPlugin(
+      String pickedFilePath) async {
+    final Map<String, dynamic> pluginMap =
+        await _extractPluginZip(pickedFilePath);
+
+    // Check if plugin is already installed
+    await _lock.synchronized(() async {
+      logger.d("Checking if plugin is already installed");
+      if (_allPlugins.any(
+          (plugin) => plugin.codeName == pluginMap["metadata"]!["codeName"]!)) {
+        await deleteDirectory(Directory(pluginMap["tempPluginPath"]));
+        logger.w("$pickedFilePath is already installed as "
+            "${pluginMap["metadata"]["codeName"]}! Removed temp files!");
+        throw Exception(
+            "AlreadyInstalled: ${pluginMap["metadata"]["codeName"]}");
+      }
+    });
+    return pluginMap;
+  }
+
+  /// Extracts the plugin to a temp dir and returns parsed plugin.yaml Map with temp dir path
+  static Future<Map<String, dynamic>> _extractPluginZip(
       String pickedFilePath) async {
     // Check if plugin.yaml exists in the zip root before extracting
     final archive =
         ZipDecoder().decodeBytes(await File(pickedFilePath).readAsBytes());
     final hasPluginYaml =
         archive.any((file) => file.isFile && file.name == "plugin.yaml");
-
     if (!hasPluginYaml) {
       logger.e("No plugin.yaml found in zip root!");
       throw Exception("No plugin.yaml found in zip root!");
@@ -288,32 +310,19 @@ class PluginManager {
     // Parse yaml
     YamlMap pluginConfig =
         loadYaml(await File(p.join(tempPath, "plugin.yaml")).readAsString());
+    Map<String, dynamic> pluginConfigMap =
+        Map<String, dynamic>.from(pluginConfig);
+    pluginConfigMap["tempPluginPath"] = tempPath;
 
+    // Validate plugin codename
     final codeName = pluginConfig["metadata"]!["codeName"]!;
-
     if (!PluginInterface.codeNameIsValid(codeName)) {
       await deleteDirectory(Directory(tempPath));
       logger.e("Invalid plugin codeName: $codeName");
       throw Exception("Invalid plugin codeName: $codeName");
     }
 
-    return await _lock.synchronized(() async {
-      // Check if plugin is already installed
-      logger.d("Checking if plugin is already installed");
-      if (_allPlugins.any((plugin) =>
-          plugin.codeName == pluginConfig["metadata"]!["codeName"]!)) {
-        await deleteDirectory(Directory(tempPath));
-        logger.w("$pickedFilePath is already installed as "
-            "${pluginConfig["metadata"]["codeName"]}! Removed temp files!");
-        throw Exception(
-            "AlreadyInstalled: ${pluginConfig["metadata"]["codeName"]}");
-      }
-
-      Map<String, dynamic> pluginConfigMap =
-          Map<String, dynamic>.from(pluginConfig);
-      pluginConfigMap["tempPluginPath"] = tempPath;
-      return pluginConfigMap;
-    });
+    return pluginConfigMap;
   }
 
   static Future<bool> test3rdPartyPlugin(Directory pluginDir) async {
