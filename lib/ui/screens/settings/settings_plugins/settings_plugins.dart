@@ -268,6 +268,56 @@ class _PluginsScreenState extends State<PluginsScreen> {
             }));
   }
 
+  void showAboutPluginDialog(PluginInterface plugin) async {
+    String metadata = "Codename: ${plugin.codeName}\n"
+        "Provider for: ${plugin.providerUrl}\n"
+        "Version: ${plugin.version}\n"
+        "Developer: ${plugin.developer}\n"
+        "Contact email: ${plugin.contactEmail}\n"
+        "Description: ${plugin.description}\n"
+        "Update URL: ${plugin.updateUrl ?? (plugin.isOfficialPlugin ? "Official plugins are updated with the app" : "Updates unsupported")}";
+    await showDialog(
+        context: context,
+        builder: (BuildContext context) => ThemedDialog(
+            title: "About ${plugin.prettyName}",
+            primaryText: "Close",
+            onPrimary: () => Navigator.pop(context),
+            content: SingleChildScrollView(
+                child: Column(
+                    spacing: 10,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(
+                      plugin.isOfficialPlugin
+                          ? "Official plugin. Developed and tested by the Hedon Haven developers."
+                          : "Third-party plugin. Not tested or endorsed by Hedon Haven.",
+                      style: Theme.of(context).textTheme.bodyLarge),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(5.0),
+                    ),
+                    padding: const EdgeInsets.all(5.0),
+                    child: SelectableText(metadata,
+                        style: Theme.of(context).textTheme.bodyMedium),
+                  ),
+                  if (!plugin.isOfficialPlugin)
+                    ListTile(
+                        trailing: const Icon(Icons.delete_forever,
+                            size: 40, color: Colors.red),
+                        contentPadding: EdgeInsets.only(left: 16, right: 8),
+                        title: const Text("Delete third-party plugin"),
+                        subtitle: Text(
+                            "Permanently delete all plugin files and configs"),
+                        onTap: () async {
+                          await PluginManager.deletePlugin(plugin);
+                          _loadPluginLists();
+                          Navigator.of(context).pop();
+                        })
+                ]))));
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -293,7 +343,6 @@ class _PluginsScreenState extends State<PluginsScreen> {
                         itemBuilder: (context, index) {
                           PluginInterface plugin = _allPlugins[index];
                           return OptionsSwitch(
-                              // TODO: MAYBE: rework this UI Widget to make it more obvious to why its there and what it means
                               leadingWidget:
                                   buildOptionsSwitchLeadingWidget(plugin),
                               trailingWidget: Row(
@@ -465,24 +514,21 @@ class _PluginsScreenState extends State<PluginsScreen> {
           )
         : IconButton(
             color: Theme.of(context).colorScheme.primary,
-            onPressed: () => showDialog(
-                context: context,
-                builder: (BuildContext context) => ThemedDialog(
-                    title: plugin.isOfficialPlugin
-                        ? "Official plugin"
-                        : "Third party plugin",
-                    primaryText: "Ok",
-                    onPrimary: () => Navigator.pop(context),
-                    content: SingleChildScrollView(
-                        child: Text(plugin.isOfficialPlugin
-                            ? "This plugin was developed and tested by the official Hedon Haven developers."
-                            : "This plugin is from the third party developer ${plugin.developer}")))),
-            icon: Icon(
-                size: 30,
-                color: plugin.isOfficialPlugin
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.tertiary,
-                plugin.isOfficialPlugin ? Icons.verified : Icons.extension));
+            onPressed: () => showAboutPluginDialog(plugin),
+            icon: Badge(
+                label: Icon(Icons.info,
+                    color: Theme.of(context).colorScheme.onSurface, size: 12),
+                backgroundColor: Colors.transparent,
+                alignment: Alignment.centerRight,
+                offset: const Offset(5, 5),
+                child: Icon(
+                    size: 30,
+                    color: plugin.isOfficialPlugin
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.tertiary,
+                    plugin.isOfficialPlugin
+                        ? Icons.verified
+                        : Icons.extension)));
   }
 
   Widget buildPluginOptions(PluginInterface plugin) {
