@@ -95,9 +95,9 @@ void _setup(Map<String, dynamic> initMessage) {
       final file = File(resolved);
       return jsonEncode(base64Encode(file.readAsBytesSync()));
     } catch (e, st) {
-      // Send error message back to main isolate
+      // Send warning message back to main isolate
       logPort.send({
-        "level": "error",
+        "level": "warning",
         "message": "Failed to read cache file: $e\n$st",
       });
       return jsonEncode("Error: $e");
