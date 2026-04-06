@@ -28,7 +28,7 @@ class PluginInterface {
   String prettyName = "";
 
   /// Plugin version
-  double version = 0.0;
+  String version = "";
 
   /// Plugin developer name
   String developer = "";

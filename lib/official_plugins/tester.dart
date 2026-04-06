@@ -42,7 +42,7 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Uri? updateUrl;
   @override
-  double version = 0.1;
+  String version = "";
 
   // For development only: Set this setting to false to disable simulated delays
   final bool _simulateDelays = false;

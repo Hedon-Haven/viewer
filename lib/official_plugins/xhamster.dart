@@ -47,7 +47,7 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Uri? updateUrl;
   @override
-  double version = 1.0;
+  String version = "";
 
   // Set OfficialPlugin specific vars
   @override
