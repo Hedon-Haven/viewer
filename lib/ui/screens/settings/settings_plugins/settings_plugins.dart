@@ -40,12 +40,14 @@ class _PluginsScreenState extends State<PluginsScreen> {
       PluginManager.getFailedPlugins(),
       PluginManager.getUpdatablePlugins()
     ).wait;
-    setState(() {
-      _allPlugins = all;
-      _enabledPlugins = enabled;
-      _failedPlugins = failed;
-      _updatablePlugins = updatable;
-    });
+    if (context.mounted) {
+      setState(() {
+        _allPlugins = all;
+        _enabledPlugins = enabled;
+        _failedPlugins = failed;
+        _updatablePlugins = updatable;
+      });
+    }
   }
 
   @override
@@ -54,10 +56,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
     _loadPluginLists();
 
     // Reload plugin lists if updates become available
-    pluginUpdatesAvailableEvent.stream.listen((_) async {
-      await _loadPluginLists();
-      setState(() {});
-    });
+    pluginUpdatesAvailableEvent.stream.listen((_) => _loadPluginLists());
   }
 
   void handleNextButton() async {
