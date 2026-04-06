@@ -164,7 +164,7 @@ class _Install3rdPartyPluginScreenState
     setState(() => isTestingPlugin = true);
     logger.i("Testing plugin functionality");
     try {
-      final passed = await PluginManager.test3rdPartyPlugin(
+      final passed = await PluginManager.testExternalPlugin(
           Directory(pluginConfigMap!["tempPluginPath"]));
       if (!passed) {
         logger.w("Functionality tests (fully/partially) failed");

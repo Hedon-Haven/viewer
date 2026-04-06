@@ -325,7 +325,12 @@ class PluginManager {
     return pluginConfigMap;
   }
 
-  static Future<bool> test3rdPartyPlugin(Directory pluginDir) async {
+  /// Fully tests an externally stored plugin
+  /// 1. Create a PluginInterface -> tests plugin.yaml validity
+  /// 2. Runs .init() -> tests both isolate functionality (e.g. the javascript runtime)
+  /// and the plugins internal init function
+  /// 3. Runs .runFunctionalityTest() -> tests basic plugins functionality
+  static Future<bool> testExternalPlugin(Directory pluginDir) async {
     if (!(await pluginDir.exists())) {
       throw Exception("Plugin directory ${pluginDir.path} does not exist");
     }
