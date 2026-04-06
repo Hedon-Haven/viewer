@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
 import "package:path/path.dart" as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:yaml/yaml.dart';
 
 import '/services/icon_manager.dart';
+import '/services/update_manager.dart';
 import '/utils/filesystem.dart';
 import '/utils/global_vars.dart';
 import '/utils/plugin_interface/plugin_interface.dart';
@@ -17,6 +19,13 @@ enum ProviderType {
   searchSuggestions,
   searchResults,
 }
+
+typedef UpdateInfo = ({
+  String newVersion,
+  Uri downloadUrl,
+  String sha256Sum,
+  List<String> changelog,
+});
 
 class PluginManager {
   /// Class-wide lock to only allow one operation at a time
@@ -34,6 +43,9 @@ class PluginManager {
 
   /// All the plugins that failed to initiate with the message to be displayed to the user
   static final Map<PluginInterface, (Exception, String)> _failedPlugins = {};
+
+  /// All the plugins that failed to initiate with the message to be displayed to the user
+  static final Map<PluginInterface, UpdateInfo> _updatablePlugins = {};
 
   /// All the currently enabled plugins grouped by the provider type they serve
   static final Map<ProviderType, Set<PluginInterface>> _providers = {
@@ -66,6 +78,7 @@ class PluginManager {
       _allPlugins.clear();
       _enabledPlugins.clear();
       _failedPlugins.clear();
+      _updatablePlugins.clear();
       for (var key in _providers.keys) {
         _providers[key]!.clear();
       }
@@ -149,6 +162,9 @@ class PluginManager {
 
       logger.d("Finished reloading Plugins");
     });
+
+    // Trigger update check, but don't wait for it
+    checkForPluginUpdates();
   }
 
   /// Updates the providers list with the options for the passed plugin
@@ -222,7 +238,10 @@ class PluginManager {
           (e is Exception ? e : Exception(e.toString()), st.toString());
       rethrow;
     }
-    _enabledPlugins.add(plugin);
+    // Directly replace old plugin instance (if present) with new one
+    _enabledPlugins
+      ..removeWhere((e) => e == plugin)
+      ..add(plugin);
     _failedPlugins.remove(plugin);
     logger.d("Plugin ${plugin.codeName} initiated successfully");
   }
@@ -259,6 +278,7 @@ class PluginManager {
           Directory(p.join(_pluginsDir!.path, plugin.codeName)));
       await _disablePlugin(plugin);
       _allPlugins.remove(plugin);
+      _updatablePlugins.remove(plugin);
       await _writeProvidersSetsToSettings();
     });
   }
@@ -388,10 +408,182 @@ class PluginManager {
       String tempDir, String installPath) async {
     await forceCopyDirectory(Directory(tempDir), Directory(installPath));
     PluginInterface newPlugin = PluginInterface(installPath);
-    _allPlugins.add(newPlugin);
+    // Directly replace old plugin with new one
+    _allPlugins
+      ..removeWhere((e) => e == newPlugin)
+      ..add(newPlugin);
     await forceDownloadIconForPlugin(newPlugin);
     return newPlugin;
   }
+
+  /// Check all plugins for updates
+  static Future<void> checkForPluginUpdates() async {
+    List<PluginInterface>? plugins;
+    await _lock.synchronized(() {
+      plugins = List.from(_allPlugins);
+    });
+
+    // Process all plugins in parallel
+    // Only acquire lock when writing the _updatablePlugins map
+    await Future.wait(plugins!.map((plugin) async {
+      final updateInfo = await _fetchUpdateInfo(plugin);
+      if (updateInfo != null) {
+        await _lock.synchronized(() {
+          _updatablePlugins[plugin] = updateInfo;
+        });
+      }
+    }));
+
+    // Notify listeners of amount of plugin updates available
+    await _lock.synchronized(
+        () => pluginUpdatesAvailableEvent.add(_updatablePlugins.length));
+  }
+
+  static Future<UpdateInfo?> _fetchUpdateInfo(PluginInterface plugin) async {
+    logger.d("Checking if ${plugin.codeName} can be updated");
+    if (plugin.updateUrl == null) {
+      logger.i("${plugin.codeName} has no update URL, stopping check.");
+      return null;
+    }
+    final response = await client.get(plugin.updateUrl!);
+    if (response.statusCode != 200) {
+      logger.e("Failed to get update.yaml from ${plugin.updateUrl}");
+      return null;
+    }
+
+    YamlMap updateYaml;
+    try {
+      updateYaml = loadYaml(response.body);
+    } catch (e, st) {
+      logger.e("Failed to parse valid yaml from response body: $e\n$st");
+      return null;
+    }
+
+    // Check and parse yaml
+    final UpdateInfo updateInfo;
+    try {
+      // Make sure the url is https
+      final Uri resolvedUri = Uri.parse(updateYaml["downloadUrl"]! as String);
+      if (resolvedUri.scheme != "https") {
+        throw Exception("Update URL must be https");
+      }
+
+      updateInfo = (
+        newVersion: updateYaml["version"]! as String,
+        downloadUrl: resolvedUri,
+        sha256Sum: updateYaml["sha256Sum"]! as String,
+        changelog: List<String>.from(updateYaml['changelog']),
+      );
+    } catch (e, st) {
+      logger.e("Failed to parse update.yaml: $e\n$st");
+      return null;
+    }
+
+    if (!newVersionIsHigher(plugin.version, updateInfo.newVersion)) {
+      logger.i("${plugin.codeName} is up to date");
+      return null;
+    }
+    logger.i("${plugin.codeName} can be updated to ${updateInfo.newVersion}");
+    return updateInfo;
+  }
+
+  /// Update a single plugin
+  /// The new plugin will be fully tested, however this process is technically
+  /// not fully atomic / reversible if an error occurs after testExternalPlugin
+  static Future<void> updatePlugin(PluginInterface oldPlugin) async {
+    logger.i("Updating plugin ${oldPlugin.codeName}");
+
+    if (oldPlugin.isOfficialPlugin) {
+      throw Exception("Official plugins cannot be updated");
+    }
+
+    UpdateInfo? updateInfo;
+    String? codename;
+    Set<ProviderType>? providers;
+
+    // Lock plugin manager to cache values
+    await _lock.synchronized(() {
+      updateInfo = _updatablePlugins[oldPlugin];
+      providers = _providers.entries
+          .where((entry) => entry.value.contains(oldPlugin))
+          .map((entry) => entry.key)
+          .toSet();
+      codename = oldPlugin.codeName;
+    });
+
+    // Store outside try block for cleanup in finally block
+    final tempFile = await getTempFile();
+    String? tempDir;
+
+    try {
+      // Perform heavier ops without lock
+      if (updateInfo == null) {
+        throw Exception("Missing updateInfo for ${oldPlugin.codeName}!");
+      }
+      final response = await client.get(updateInfo!.downloadUrl);
+      if (response.statusCode != 200) {
+        throw Exception(
+            "Failed to download zip update for ${oldPlugin.codeName}");
+      }
+
+      await File(tempFile).writeAsBytes(response.bodyBytes);
+
+      String bytesChecksum = sha256.convert(response.bodyBytes).toString();
+      if (updateInfo!.sha256Sum != bytesChecksum) {
+        logger.e("Checksums do not match, aborting plugin update");
+        throw Exception("Checksums do not match, "
+            "expected: ${updateInfo!.sha256Sum} calculated: $bytesChecksum");
+      }
+
+      final Map<String, dynamic> pluginConfig =
+          await _extractPluginZip(tempFile);
+
+      if (pluginConfig["metadata"]["codeName"] != codename!) {
+        throw Exception(
+            "New codename: ${pluginConfig["metadata"]["codeName"]} does not match old codename: $codename");
+      }
+
+      tempDir = pluginConfig["tempPluginPath"];
+
+      // Test plugin loading and functionality.
+      // If this succeeds we assume the new plugin is fully valid and
+      // replace the old plugin with it
+      if (!(await testExternalPlugin(Directory(tempDir!)))) {
+        throw Exception("3rd party plugin functionality tests failed");
+      }
+
+      // Re-acquire lock to update plugin files
+      await _lock.synchronized(() async {
+        oldPlugin.dispose();
+        PluginInterface newPlugin =
+            await _importPlugin(tempDir!, p.join(_pluginsDir!.path, codename!));
+        // Re-enable plugin if needed
+        if (providers!.isNotEmpty) {
+          await _enablePlugin(newPlugin);
+          await _setAsProvider(newPlugin, providers!);
+          await _writeProvidersSetsToSettings();
+        }
+      });
+    } catch (e, st) {
+      logger.e("Failed to update plugin: $e\n$st");
+      rethrow;
+    } finally {
+      // Perform cleanup no matter the outcome
+      await File(tempFile).delete();
+      if (tempDir != null) {
+        await Directory(tempDir).delete(recursive: true);
+      }
+    }
+
+    // Update listeners of amount of plugin updates available
+    await _lock.synchronized(() {
+      _updatablePlugins.removeWhere((p, _) => p.codeName == codename);
+      pluginUpdatesAvailableEvent.add(_updatablePlugins.length);
+    });
+
+    logger.i("Finished updating plugin ${oldPlugin.codeName} successfully");
+  }
+
   /// NON-locked function that writes the current providers sets as ABC sorted Lists to settings
   static Future<void> _writeProvidersSetsToSettings() async {
     logger.d("Writing provider Sets to settings");
@@ -437,6 +629,14 @@ class PluginManager {
 
   static Future<(Exception, String)?> getPluginError(PluginInterface plugin) {
     return _lock.synchronized(() => _failedPlugins[plugin]);
+  }
+
+  static Future<List<PluginInterface>> getUpdatablePlugins() {
+    return _lock.synchronized(() => List.from(_updatablePlugins.keys));
+  }
+
+  static Future<UpdateInfo?> getUpdateInfoFor(PluginInterface plugin) {
+    return _lock.synchronized(() => _updatablePlugins[plugin]);
   }
 
   static Future<List<PluginInterface>> getEnabledPlugins() {
