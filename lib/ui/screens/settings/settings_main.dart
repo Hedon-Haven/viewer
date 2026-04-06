@@ -49,7 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         "Enable/disable plugins, set plugin options"),
                     leading: Badge(
                         isLabelVisible: showPluginsBadge,
-                        smallSize: 10,
+                        smallSize: 12,
                         alignment: AlignmentDirectional.centerEnd,
                         child: const Icon(Icons.extension)),
                     onTap: () {
