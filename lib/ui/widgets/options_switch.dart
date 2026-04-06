@@ -68,8 +68,10 @@ class _OptionsSwitchWidgetState extends State<OptionsSwitch> {
                     leading: widget.leadingWidget,
                     trailing: widget.trailingWidget,
                     title: Text(widget.title),
-                    subtitle:
-                        widget.subTitle != null ? Text(widget.subTitle!) : null,
+                    subtitle: widget.subTitle != null
+                        ? Text(widget.subTitle!,
+                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                        : null,
                     visualDensity: widget.reduceBorders
                         ? const VisualDensity(horizontal: 0, vertical: -4)
                         : null,
