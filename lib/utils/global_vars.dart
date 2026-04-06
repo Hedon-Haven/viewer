@@ -14,6 +14,7 @@ late Logger logger;
 late PackageInfo packageInfo;
 late http.Client client;
 late StreamController<void> reloadVideoListEvent;
+late StreamController<int> pluginUpdatesAvailableEvent;
 
 /// Global visual app reload. MUST be set from initGlobalSetState, NOT from the main initGlobalVars()
 late void Function() globalSetState;
@@ -31,7 +32,7 @@ Future<void> initGlobalVars() async {
   await initLogger();
   await initPackageInfo();
   await initHttpClient();
-  await initReloadVideoListEvent();
+  await initEvents();
 }
 
 // This function is not called by the main initGlobalVars as it has to be set
@@ -62,7 +63,8 @@ Future<void> initHttpClient() async {
   client = getHttpClient(proxy);
 }
 
-Future<void> initReloadVideoListEvent() async {
-  logger.i("Initializing pluginsChangedEvent stream controller");
+Future<void> initEvents() async {
+  logger.i("Initializing stream controllers");
   reloadVideoListEvent = StreamController<void>.broadcast();
+  pluginUpdatesAvailableEvent = StreamController<int>.broadcast();
 }
