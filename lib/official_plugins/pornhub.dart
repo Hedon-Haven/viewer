@@ -35,7 +35,9 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Uri iconUrl = Uri.parse("https://www.pornhub.com/favicon.ico");
   @override
-  String providerUrl = "https://www.pornhub.com";
+  String serviceUrl = "https://www.pornhub.com";
+  @override
+  List<String> handleUrls = ["https://www.pornhub.com"];
   @override
   int initialHomePage = 0;
   @override
@@ -405,7 +407,8 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
     // To be able to make search suggestion requests later, both a session cookie and a token are needed
     // Get the sessions cookie (called ss) from the response headers
     String? setCookies;
-    http.Response response = await _performGetRequest(Uri.parse(providerUrl));
+    http.Response response =
+        await _performGetRequest(Uri.parse("https://www.pornhub.com"));
     if (response.statusCode != 200) {
       return Future.value(false);
     }
@@ -461,10 +464,11 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
     // -> load main homepage first, then load first video homepage
     if (page == 0) {
       // page=0 returns a different page than requesting the base website
-      logger.d("Requesting $providerUrl");
-      var response = await _performGetRequest(Uri.parse(providerUrl),
-          // Mobile video image previews are higher quality
-          headers: {"Cookie": "platform=mobile"});
+      logger.d("Requesting https://www.pornhub.com");
+      var response =
+          await _performGetRequest(Uri.parse("https://www.pornhub.com"),
+              // Mobile video image previews are higher quality
+              headers: {"Cookie": "platform=mobile"});
       debugCallback?.call(response.body);
       if (response.statusCode != 200) {
         logger.e(
@@ -483,11 +487,11 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
         return element.children.isNotEmpty;
       }).toList();
     } else {
-      logger.d("Requesting $providerUrl/video?page=$page");
-      var response =
-          await _performGetRequest(Uri.parse("$providerUrl/video?page=$page"),
-              // Mobile video image previews are higher quality
-              headers: {"Cookie": "platform=mobile"});
+      logger.d("Requesting https://www.pornhub.com/video?page=$page");
+      var response = await _performGetRequest(
+          Uri.parse("https://www.pornhub.com/video?page=$page"),
+          // Mobile video image previews are higher quality
+          headers: {"Cookie": "platform=mobile"});
       debugCallback?.call(response.body);
       if (response.statusCode != 200) {
         logger.e(

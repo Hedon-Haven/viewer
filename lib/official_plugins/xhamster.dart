@@ -33,7 +33,9 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Uri iconUrl = Uri.parse("https://xhamster.com/favicon.ico");
   @override
-  String providerUrl = "https://xhamster.com";
+  String serviceUrl = "https://xhamster.com";
+  @override
+  List<String> handleUrls = ["https://xhamster.com"];
   @override
   int initialHomePage = 1;
   @override
@@ -192,7 +194,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     }
     isInitialized = true;
     // Request main page to check for age gate / banned country
-    http.Response response = await client.get(Uri.parse(providerUrl));
+    http.Response response =
+        await client.get(Uri.parse("https://xhamster.com"));
     if (response.statusCode != 200) {
       return Future.value(false);
     }
@@ -218,8 +221,8 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Future<List<UniversalVideoPreview>> getHomePage(int page,
       [void Function(String body)? debugCallback]) async {
-    logger.d("Requesting $providerUrl/$page");
-    var response = await client.get(Uri.parse("$providerUrl/$page"));
+    logger.d("Requesting https://xhamster.com/$page");
+    var response = await client.get(Uri.parse("https://xhamster.com/$page"));
     debugCallback?.call(response.body);
     if (response.statusCode != 200) {
       logger.e(

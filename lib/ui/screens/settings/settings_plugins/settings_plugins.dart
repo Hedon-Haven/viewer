@@ -237,7 +237,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
               }
               final UpdateInfo updateInfo = snapshot.data!;
               final String details = "Codename: ${plugin.codeName}\n"
-                  "Provides: ${plugin.providerUrl}\n\n"
+                  "Service: ${plugin.serviceUrl}\n\n"
                   "Changelog for ${plugin.version} -> ${updateInfo.newVersion}:\n"
                   "${updateInfo.changelog.map((s) => "• $s").join("\n")}\n\n"
                   "Download URL: ${updateInfo.downloadUrl}";
@@ -270,7 +270,8 @@ class _PluginsScreenState extends State<PluginsScreen> {
 
   void showAboutPluginDialog(PluginInterface plugin) async {
     String metadata = "Codename: ${plugin.codeName}\n"
-        "Provider for: ${plugin.providerUrl}\n"
+        "Service: ${plugin.serviceUrl}\n"
+        "Handle URLs: ${plugin.handleUrls.join(", ")}\n"
         "Version: ${plugin.version}\n"
         "Developer: ${plugin.developer}\n"
         "Contact email: ${plugin.contactEmail}\n"
@@ -381,7 +382,7 @@ class _PluginsScreenState extends State<PluginsScreen> {
                                         icon: const Icon(Icons.settings))
                                   ]),
                               title: plugin.prettyName,
-                              subTitle: plugin.providerUrl,
+                              subTitle: plugin.serviceUrl,
                               switchState: _enabledPlugins.contains(plugin),
                               nonInteractive:
                                   pluginCodeNameInProgress != null ||

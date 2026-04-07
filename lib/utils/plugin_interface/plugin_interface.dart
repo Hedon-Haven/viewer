@@ -45,8 +45,11 @@ class PluginInterface {
   /// Icon must point to a small icon of the website, preferably the favicon
   late Uri iconUrl;
 
-  /// The base website url of the plugin provider, as a string. Example: https://example.com
-  late String providerUrl;
+  /// Service this plugin scrapes / provides data from
+  late String serviceUrl;
+
+  /// URLs that this plugin can handle
+  late List<String> handleUrls;
 
   /// Initial homepage number
   late int initialHomePage;
@@ -112,7 +115,8 @@ class PluginInterface {
       description = config["metadata"]["description"];
       updateUrl = Uri.parse(config["metadata"]["updateUrl"]);
       iconUrl = Uri.parse(config["providerData"]["iconUrl"]);
-      providerUrl = config["providerData"]["providerUrl"];
+      serviceUrl = config["providerData"]["serviceUrl"];
+      handleUrls = config["providerData"]["handleUrls"];
       initialHomePage = config["initialPageCounts"]["initialHomePage"];
       initialSearchResultsPage =
           config["initialPageCounts"]["initialSearchResultsPage"];

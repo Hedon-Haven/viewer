@@ -129,10 +129,10 @@ class LoadingHandler {
                   "Banned country encountered. Try setting a proxy in settings / privacy");
             case "UnreachableException":
               logger.e(
-                  "Couldn't connect to ${plugin.providerUrl} to get search results:"
+                  "Couldn't connect to ${plugin.serviceUrl} to get search results:"
                   " $e\n$stacktrace");
               resultsIssues[plugin]!["Critical"]!.add(
-                  "Couldn't connect to ${plugin.providerUrl} to get search results");
+                  "Couldn't connect to ${plugin.serviceUrl} to get search results");
             case "NotFoundException":
               logger.e(
                   "No results from ${plugin.codeName}. Soft 404, NOT adding to resultsIssuesMap");
@@ -375,9 +375,9 @@ class LoadingHandler {
                 "Banned country encountered. Try setting a proxy in settings / privacy");
           case "UnreachableException":
             logger.e(
-                "Couldn't connect to ${plugin.providerUrl} to get comments: $e\n$stacktrace");
+                "Couldn't connect to ${plugin.serviceUrl} to get comments: $e\n$stacktrace");
             commentsIssues["Critical"]!.add(
-                "Couldn't connect to ${plugin.providerUrl} to get comments");
+                "Couldn't connect to ${plugin.serviceUrl} to get comments");
           case "NotFoundException":
             logger.e(
                 "No comments from ${plugin.codeName}. Soft 404, NOT adding to commentsIssuesMap");
@@ -524,10 +524,10 @@ class LoadingHandler {
                 "Banned country encountered. Try setting a proxy in settings / privacy");
           case "UnreachableException":
             logger.e(
-                "Couldn't connect to ${plugin.providerUrl} get video suggestions: "
+                "Couldn't connect to ${plugin.serviceUrl} get video suggestions: "
                 "$e\n$stacktrace");
             videoSuggestionsIssues["Critical"]!.add(
-                "Couldn't connect to ${plugin.providerUrl} to get video suggestions");
+                "Couldn't connect to ${plugin.serviceUrl} to get video suggestions");
           case "NotFoundException":
             logger.e(
                 "No video suggestions from ${plugin.codeName}. Soft 404, NOT adding to commentsIssuesMap");
@@ -629,10 +629,10 @@ class LoadingHandler {
                 "Banned country encountered. Try setting a proxy in settings / privacy");
           case "UnreachableException":
             logger.e(
-                "Couldn't connect to ${plugin.providerUrl} to get author videos: "
+                "Couldn't connect to ${plugin.serviceUrl} to get author videos: "
                 "$e\n$stacktrace");
             authorVideosIssues["Critical"]!.add(
-                "Couldn't connect to ${plugin.providerUrl} to get author videos");
+                "Couldn't connect to ${plugin.serviceUrl} to get author videos");
           default:
             logger.e("Error getting author videos from ${plugin.codeName}:"
                 " $e\n$stacktrace");

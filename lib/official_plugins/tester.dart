@@ -29,7 +29,9 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Uri iconUrl = Uri.parse("https://placehold.co/favicon.ico");
   @override
-  String providerUrl = "https://tester-plugin.com";
+  String serviceUrl = "https://example.com";
+  @override
+  List<String> handleUrls = ["https://example.com"];
   @override
   int initialHomePage = 0;
   @override
