@@ -185,39 +185,6 @@ class PluginInterface {
     return jsonDecode(response["result"] as String);
   }
 
-  void dispose() {
-    if (!isInitialized) {
-      return;
-    }
-    logger.d("Disposing $codeName plugin's isolate");
-    bool exited = false;
-    final exitPort = ReceivePort();
-    exitPort.listen((_) {
-      exited = true;
-      exitPort.close();
-    });
-    _isolate.addOnExitListener(exitPort.sendPort);
-
-    // Send message to isolate to have it clean up the JS runtime
-    _isolateSendPort.send({"type": "dispose"});
-
-    // Force-kill isolate if disposal didn't succeed for any reason
-    Future.delayed(const Duration(seconds: 5), () {
-      if (exited) {
-        logger.d("$codeName plugin's isolate disposed successfully");
-        return;
-      }
-      logger.w("$codeName: isolate did not dispose cleanly, forcing kill");
-      _isolate.kill(priority: Isolate.immediate);
-    });
-
-    // This is technically set before the isolate force-kill happens, but users
-    // might toggle the plugin quicker -> rather have 2 instances for a few
-    // seconds than failing to initialize
-    isInitialized = false;
-    _isolateReady = Completer();
-  }
-
   /// Initialize the plugin isolate and init the plugin
   /// CAREFUL, this function doesn't handle errors!
   Future<void> init(String cachePath,
@@ -262,6 +229,39 @@ class PluginInterface {
 
     // Some plugins might need to be prepared before they can be used (e.g. fetch cookies)
     await _callFunction("init", []) as bool;
+  }
+
+  void dispose() {
+    if (!isInitialized) {
+      return;
+    }
+    logger.d("Disposing $codeName plugin's isolate");
+    bool exited = false;
+    final exitPort = ReceivePort();
+    exitPort.listen((_) {
+      exited = true;
+      exitPort.close();
+    });
+    _isolate.addOnExitListener(exitPort.sendPort);
+
+    // Send message to isolate to have it clean up the JS runtime
+    _isolateSendPort.send({"type": "dispose"});
+
+    // Force-kill isolate if disposal didn't succeed for any reason
+    Future.delayed(const Duration(seconds: 5), () {
+      if (exited) {
+        logger.d("$codeName plugin's isolate disposed successfully");
+        return;
+      }
+      logger.w("$codeName: isolate did not dispose cleanly, forcing kill");
+      _isolate.kill(priority: Isolate.immediate);
+    });
+
+    // This is technically set before the isolate force-kill happens, but users
+    // might toggle the plugin quicker -> rather have 2 instances for a few
+    // seconds than failing to initialize
+    isInitialized = false;
+    _isolateReady = Completer();
   }
 
   /// Test full plugin functionality and return false if it fails
