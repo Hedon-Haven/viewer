@@ -50,6 +50,7 @@ dependencies:
   animations: ^2.1.1
   path: ^1.9.1
   synchronized: ^3.4.0
+  super_drag_and_drop: ^0.9.1
 
 
 

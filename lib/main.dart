@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:secure_app_switcher/secure_app_switcher.dart';
+import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 import '/services/database_manager.dart';
 import '/services/icon_manager.dart';
@@ -93,6 +94,9 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
 
   /// This controls whether the preview should be currently blocked
   bool blockPreview = false;
+
+  /// Tracks the hash of the currently hovered drop
+  bool hoveringWithLink = false;
   int _selectedIndex = 0;
   static List<Widget> screenList = <Widget>[
     const HomeScreen(),
@@ -228,70 +232,101 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
           builder: (context, snapshot) {
             final isMobile = Platform.isAndroid || Platform.isIOS;
             return MaterialApp(
-              title: "Hedon Haven",
-              theme: ThemeData(
-                // Disable click
-                splashFactory:
-                    isMobile ? InkRipple.splashFactory : NoSplash.splashFactory,
-                // Try to use system colors first and fallback to Green
-                colorScheme: lightColorScheme ??
-                    ColorScheme.fromSwatch(primarySwatch: Colors.green),
-              ),
-              darkTheme: ThemeData(
-                splashFactory:
-                    isMobile ? InkRipple.splashFactory : NoSplash.splashFactory,
-                colorScheme: darkColorScheme ??
-                    ColorScheme.fromSwatch(
-                        primarySwatch: Colors.green,
-                        brightness: Brightness.dark),
-              ),
-              themeMode: snapshot.data ?? ThemeMode.system,
-              navigatorKey: materialAppKey,
-              home: Stack(children: [
-                FutureBuilder<bool?>(
-                    future: onboardingCompleted,
-                    builder: (context, snapshotParent) {
-                      // Don't show anything until the future is done
-                      if (snapshotParent.connectionState ==
-                          ConnectionState.waiting) {
-                        return const SizedBox();
+                title: "Hedon Haven",
+                theme: ThemeData(
+                  // Disable click
+                  splashFactory: isMobile
+                      ? InkRipple.splashFactory
+                      : NoSplash.splashFactory,
+                  // Try to use system colors first and fallback to Green
+                  colorScheme: lightColorScheme ??
+                      ColorScheme.fromSwatch(primarySwatch: Colors.green),
+                ),
+                darkTheme: ThemeData(
+                  splashFactory: isMobile
+                      ? InkRipple.splashFactory
+                      : NoSplash.splashFactory,
+                  colorScheme: darkColorScheme ??
+                      ColorScheme.fromSwatch(
+                          primarySwatch: Colors.green,
+                          brightness: Brightness.dark),
+                ),
+                themeMode: snapshot.data ?? ThemeMode.system,
+                navigatorKey: materialAppKey,
+                home: DropRegion(
+                  // Formats this region can accept.
+                  formats: [Formats.uri],
+                  hitTestBehavior: HitTestBehavior.opaque,
+                  // Cannot properly test for https/http here due to callback nature of onDropOver
+                  onDropOver: (event) {
+                    return event.session.items.first.canProvide(Formats.uri)
+                        ? DropOperation.copy
+                        : DropOperation.none;
+                  },
+                  onDropEnter: (event) =>
+                      setState(() => hoveringWithLink = true),
+                  onDropLeave: (event) =>
+                      setState(() => hoveringWithLink = false),
+                  onPerformDrop: (event) async {
+                    event.session.items.first.dataReader!.getValue(Formats.uri,
+                        (value) {
+                      // Only accept http and https links
+                      if (value != null &&
+                          (value.uri.scheme == "https" ||
+                              value.uri.scheme == "http")) {
+                        logger.i("Dropped link: ${value.uri.toString()}");
+                      } else {
+                        logger.w("Dropped non-http/https link");
                       }
-                      return !snapshotParent.data!
-                          ? WelcomeScreen()
-                          : FutureBuilder<String?>(
-                              future: appearanceType,
-                              builder: (context, snapshot) {
-                                // Don't show anything until the future is done
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const SizedBox();
-                                }
-                                if (!concealApp) {
-                                  logger.i(
-                                      "App concealing was disabled, loading default app");
-                                  return buildRealApp();
-                                }
-                                switch (snapshot.data!) {
-                                  case "GSM Settings":
-                                    return FakeSettingsScreen(
-                                        parentStopConcealing:
-                                            parentStopConcealing);
-                                  case "Reminders":
-                                    return FakeRemindersScreen(
-                                        parentStopConcealing:
-                                            parentStopConcealing);
-                                  default:
-                                    return buildRealApp();
-                                }
-                              });
-                    }),
-                if (blockPreview) ...[
-                  Positioned.fill(
-                    child: Container(color: Colors.black),
-                  ),
-                ]
-              ]),
-            );
+                    }, onError: (error) {
+                      logger.e("Error reading dropped link: $error");
+                    });
+                  },
+                  child: Stack(children: [
+                    FutureBuilder<bool?>(
+                        future: onboardingCompleted,
+                        builder: (context, snapshotParent) {
+                          // Don't show anything until the future is done
+                          if (snapshotParent.connectionState ==
+                              ConnectionState.waiting) {
+                            return const SizedBox();
+                          }
+                          return !snapshotParent.data!
+                              ? WelcomeScreen()
+                              : FutureBuilder<String?>(
+                                  future: appearanceType,
+                                  builder: (context, snapshot) {
+                                    // Don't show anything until the future is done
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const SizedBox();
+                                    }
+                                    if (!concealApp) {
+                                      logger.i(
+                                          "App concealing was disabled, loading default app");
+                                      return buildRealApp();
+                                    }
+                                    switch (snapshot.data!) {
+                                      case "GSM Settings":
+                                        return FakeSettingsScreen(
+                                            parentStopConcealing:
+                                                parentStopConcealing);
+                                      case "Reminders":
+                                        return FakeRemindersScreen(
+                                            parentStopConcealing:
+                                                parentStopConcealing);
+                                      default:
+                                        return buildRealApp();
+                                    }
+                                  });
+                        }),
+                    if (blockPreview) ...[
+                      Positioned.fill(
+                        child: Container(color: Colors.black),
+                      ),
+                    ]
+                  ]),
+                ));
           });
     });
   }
@@ -337,20 +372,48 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
               });
             }),
         body: ClipRect(
-          child: Stack(
-            children: screenList
-                .asMap()
-                .entries
-                .map((entry) => AnimatedSlide(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      offset: entry.key == _selectedIndex
-                          ? Offset.zero
-                          : Offset(entry.key < _selectedIndex ? -1.0 : 1.0, 0),
-                      child: entry.value,
-                    ))
-                .toList(),
-          ),
+          child: Stack(children: [
+            ...screenList.asMap().entries.map((entry) => AnimatedSlide(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  offset: entry.key == _selectedIndex
+                      ? Offset.zero
+                      : Offset(entry.key < _selectedIndex ? -1.0 : 1.0, 0),
+                  child: entry.value,
+                )),
+            if (hoveringWithLink) ...[
+              Positioned.fill(
+                // Fixes wrong colorScheme being used (wrong context)
+                child: Builder(
+                    builder: (context) => Container(
+                        color:
+                            Theme.of(context).colorScheme.surfaceContainerHigh,
+                        child: Padding(
+                            padding: EdgeInsets.all(100),
+                            child: Container(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    spacing: 50,
+                                    children: [
+                                      Text("Drop to open",
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineLarge!
+                                              .copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface)),
+                                      Icon(Icons.open_in_browser, size: 70)
+                                    ]))))),
+              ),
+            ]
+          ]),
         ));
   }
 }
