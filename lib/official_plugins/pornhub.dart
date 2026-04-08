@@ -1063,7 +1063,7 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
       authorPageLink = Uri.parse("$_modelEndpoint$authorID");
 
       logger.d(
-          "Received non 200 status code -> Requesting user page: $authorPageLink");
+          "Received non 200 status code -> Requesting model page: $authorPageLink");
       response = await client.head(authorPageLink,
           headers: {"Cookie": "KEY=${_sessionCookies["KEY"]}"});
 
@@ -1071,16 +1071,16 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
       if (response.body.contains("Most Popular Pornstars And Models")) {
         authorPageLink = Uri.parse("$_pornstarEndpoint$authorID");
         logger.d("Detected redirect to all pornstars page, trying again with "
-            "pornstar model endpoint: $authorPageLink");
+            "pornstar endpoint: $authorPageLink");
         response = await client.head(authorPageLink,
             headers: {"Cookie": "KEY=${_sessionCookies["KEY"]}"});
       }
 
       if (response.statusCode != 200) {
         logger.e(
-            "Error downloading html (tried both user and channel): ${response.statusCode} - ${response.reasonPhrase}");
+            "Error downloading html (tried channel, model, pornstar): ${response.statusCode} - ${response.reasonPhrase}");
         throw Exception(
-            "Error downloading html (tried both user and channel): ${response.statusCode} - ${response.reasonPhrase}");
+            "Error downloading html (tried channel, model, pornstar): ${response.statusCode} - ${response.reasonPhrase}");
       }
     }
     return authorPageLink;
@@ -1099,7 +1099,7 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
       // Try again for model author type
       authorPageLink = Uri.parse("$_modelEndpoint$authorID");
       logger.d(
-          "Received non 200 status code -> Requesting user page: $authorPageLink");
+          "Received non 200 status code -> Requesting model page: $authorPageLink");
       response = await _performGetRequest(authorPageLink,
           // Mobile video image previews are higher quality
           headers: {"Cookie": "accessAgeDisclaimerPH=1; platform=mobile"});
@@ -1108,7 +1108,7 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
       if (response.body.contains("Most Popular Pornstars And Models")) {
         authorPageLink = Uri.parse("$_pornstarEndpoint$authorID");
         logger.d("Detected redirect to all pornstars page, trying again with "
-            "pornstar model endpoint: $authorPageLink");
+            "pornstar endpoint: $authorPageLink");
         response = await _performGetRequest(authorPageLink,
             // Mobile video image previews are higher quality
             headers: {"Cookie": "accessAgeDisclaimerPH=1; platform=mobile"});
@@ -1116,9 +1116,9 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
 
       if (response.statusCode != 200) {
         logger.e(
-            "Error downloading html (tried both user and channel): ${response.statusCode} - ${response.reasonPhrase}");
+            "Error downloading html (tried channel, model, pornstar): ${response.statusCode} - ${response.reasonPhrase}");
         throw Exception(
-            "Error downloading html (tried both user and channel): ${response.statusCode} - ${response.reasonPhrase}");
+            "Error downloading html (tried channel, model, pornstar): ${response.statusCode} - ${response.reasonPhrase}");
       }
     }
 
