@@ -5,6 +5,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fvp/fvp.dart' as fvp;
+import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:secure_app_switcher/secure_app_switcher.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
@@ -125,7 +126,6 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
       }
       setState(() => hidePreview = value);
     });
-
     // For detecting app state
     WidgetsBinding.instance.addObserver(this);
 
@@ -136,6 +136,40 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
     // Enable badge when plugin update check finishes and updates are available
     pluginUpdatesAvailableEvent.stream
         .listen((value) => setState(() => showSettingsBadge = value != 0));
+
+    // Listen to URL sharing coming from outside the app while app is in memory.
+    ReceiveSharingIntent.instance.getMediaStream().listen((value) {
+      for (var item in value) {
+        try {
+          Uri parsedUri = Uri.parse(item.path);
+          if (parsedUri.scheme == "http" || parsedUri.scheme == "https") {
+            logger.i("Received link: ${parsedUri.toString()}");
+          }
+        } catch (e, st) {
+          logger.e("Failed to parse shared link into Uri: $e\n$st");
+          showToast("Failed to parse shared link into Uri", context);
+        }
+      }
+    }, onError: (e) {
+      logger.e("Failed to process shared item: $e");
+    });
+
+    // Get the media sharing coming from outside the app while the app is closed.
+    ReceiveSharingIntent.instance.getInitialMedia().then((value) {
+      for (var item in value) {
+        try {
+          Uri parsedUri = Uri.parse(item.message!);
+          if (parsedUri.scheme == "http" || parsedUri.scheme == "https") {
+            logger.i("Received link: ${parsedUri.toString()}");
+          }
+        } catch (e, st) {
+          showToast("Failed to parse shared link into Uri", context);
+          logger.e("Failed to parse shared link into Uri: $e\n$st");
+        }
+      }
+    }, onError: (e) {
+      logger.e("Failed to process shared item: $e");
+    });
 
     performUpdate();
   }
