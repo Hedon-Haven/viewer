@@ -137,27 +137,27 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   };
   final Map<String, String> _dateRangeMap = {
     "All time": "",
-    "Last year": "&date=yearly",
-    "Last month": "&date=monthly",
-    "Last week": "&date=weekly",
-    "Last day/Last 3 days/Latest": "&date=latest"
+    "Last year": "yearly",
+    "Last month": "monthly",
+    "Last week": "weekly",
+    "Last day/Last 3 days/Latest": "latest"
   };
   final Map<int, String> _minDurationMap = {
     0: "",
-    300: "&min_duration=5",
-    600: "&min_duration=10",
+    300: "5",
+    600: "10",
     // xhamster doesn't support 20 min and auto-converts it to 10
-    1200: "&min_duration=10",
-    1800: "&min_duration=30",
+    1200: "10",
+    1800: "30",
     3600: ""
   };
   final Map<int, String> _maxDurationMap = {
     0: "",
-    300: "&max_duration=5",
-    600: "&max_duration=10",
+    300: "5",
+    600: "10",
     // xhamster doesn't support 20 min and auto-converts it to 10
-    1200: "&max_duration=10",
-    1800: "&max_duration=30",
+    1200: "10",
+    1800: "30",
     3600: ""
   };
 
@@ -307,11 +307,11 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     String urlString = "$_searchEndpoint${Uri.encodeComponent(request.searchString)}"
         "?page=$page"
         "&sort=${_sortingTypeMap[request.sortingType]!}"
-        "${_dateRangeMap[request.dateRange]!}"
+        "${request.dateRange != "All time" ? "&date=${_dateRangeMap[request.dateRange]}": ""}"
         "${[720, 1080, 2160].contains(request.minQuality) ? "&quality=${request.minQuality}p" : ""}"
         // no max quality filter
-        "${_minDurationMap[request.minDuration]!}"
-        "${_maxDurationMap[request.maxDuration]!}"
+        "${[0, 3600].contains(request.minDuration) ? "" : "&min_duration=${_minDurationMap[request.minDuration]!}"}"
+        "${[0, 3600].contains(request.maxDuration) ? "" : "&max_duration=${_maxDurationMap[request.maxDuration]!}"}"
         "${request.minFramesPerSecond > 0 ? "&fps=${request.minFramesPerSecond}" : ""}"
         // no min FPS filter
         "${request.virtualReality ? "&format=vr" : ""}"
