@@ -213,7 +213,9 @@ class _VideoListState extends State<VideoList> {
         final current = previewVideoController.value.position;
         // Detect wrap: current is small (near zero) and last was near duration
         if (current < const Duration(milliseconds: 100) &&
-            _lastPreviewPosition > previewVideoController.value.duration - const Duration(milliseconds: 200)) {
+            _lastPreviewPosition >
+                previewVideoController.value.duration -
+                    const Duration(milliseconds: 200)) {
           _previewLoopCount++;
           if (_previewLoopCount >= 3) {
             previewVideoController.setLooping(false);

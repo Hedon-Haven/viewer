@@ -27,6 +27,7 @@ class _FilterScreenState extends State<FilterScreen> {
 
   double minDurationIndex = 0;
   double maxDurationIndex = 5;
+
   // 0, 5, 10, 20, 30, 60 min
   final List<int> durationsInSeconds = [0, 300, 600, 1200, 1800, 3600];
 
