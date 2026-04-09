@@ -10,6 +10,7 @@ import 'package:secure_app_switcher/secure_app_switcher.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 import '/services/database_manager.dart';
+import '/services/external_link_handler.dart';
 import '/services/icon_manager.dart';
 import '/services/plugin_manager.dart';
 import '/services/shared_prefs_manager.dart';
@@ -138,37 +139,21 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
         .listen((value) => setState(() => showSettingsBadge = value != 0));
 
     // Listen to URL sharing coming from outside the app while app is in memory.
-    ReceiveSharingIntent.instance.getMediaStream().listen((value) {
-      for (var item in value) {
-        try {
-          Uri parsedUri = Uri.parse(item.path);
-          if (parsedUri.scheme == "http" || parsedUri.scheme == "https") {
-            logger.i("Received link: ${parsedUri.toString()}");
-          }
-        } catch (e, st) {
-          logger.e("Failed to parse shared link into Uri: $e\n$st");
-          showToast("Failed to parse shared link into Uri", context);
-        }
-      }
-    }, onError: (e) {
+    ReceiveSharingIntent.instance
+        .getMediaStream()
+        .listen((value) => handleSharedLink(value), onError: (e) {
       logger.e("Failed to process shared item: $e");
+      showToastViaOverlay("Failed to process shared item: $e",
+          materialAppKey.currentState!.overlay!, 5);
     });
 
     // Get the media sharing coming from outside the app while the app is closed.
-    ReceiveSharingIntent.instance.getInitialMedia().then((value) {
-      for (var item in value) {
-        try {
-          Uri parsedUri = Uri.parse(item.message!);
-          if (parsedUri.scheme == "http" || parsedUri.scheme == "https") {
-            logger.i("Received link: ${parsedUri.toString()}");
-          }
-        } catch (e, st) {
-          showToast("Failed to parse shared link into Uri", context);
-          logger.e("Failed to parse shared link into Uri: $e\n$st");
-        }
-      }
-    }, onError: (e) {
+    ReceiveSharingIntent.instance
+        .getInitialMedia()
+        .then((value) => handleSharedLink(value), onError: (e) {
       logger.e("Failed to process shared item: $e");
+      showToastViaOverlay("Failed to process shared item: $e",
+          materialAppKey.currentState!.overlay!, 5);
     });
 
     performUpdate();
@@ -258,6 +243,56 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
     setState(() {});
   }
 
+  Future<void> handleDroppedLink(PerformDropEvent event) async {
+    event.session.items.first.dataReader!.getValue(Formats.uri, (value) async {
+      // Only accept http and https links
+      if (value != null &&
+          (value.uri.scheme == "https" || value.uri.scheme == "http")) {
+        logger.i("Received dropped link: ${value.uri.toString()}");
+        try {
+          await handleExternalLink(
+              value.uri, materialAppKey.currentState!.context);
+        } catch (e, st) {
+          logger.e("Error handling dropped link: $e\n$st");
+          showToastViaOverlay("Error handling dropped link: $e",
+              materialAppKey.currentState!.overlay!, 5);
+        }
+      } else {
+        logger.w("Dropped non-http/https link");
+        showToastViaOverlay("Dropped non-http/https link",
+            materialAppKey.currentState!.overlay!, 5);
+      }
+    }, onError: (error) {
+      logger.e("Error reading dropped link: $error");
+      showToastViaOverlay("Error reading dropped link: $error",
+          materialAppKey.currentState!.overlay!, 5);
+    });
+  }
+
+  Future<void> handleSharedLink(
+      List<SharedMediaFile> sharedMediaFileList) async {
+    for (var item in sharedMediaFileList) {
+      try {
+        Uri parsedUri = Uri.parse(item.path);
+        if (parsedUri.scheme == "http" || parsedUri.scheme == "https") {
+          logger.i("Received shared link: ${parsedUri.toString()}");
+          try {
+            await handleExternalLink(
+                parsedUri, materialAppKey.currentState!.context);
+          } catch (e, st) {
+            logger.e("Failed to handle shared link: $e\n$st");
+            showToastViaOverlay("Failed to handle shared link: $e",
+                materialAppKey.currentState!.overlay!, 5);
+          }
+        }
+      } catch (e, st) {
+        logger.e("Failed to parse shared link into Uri: $e\n$st");
+        showToastViaOverlay("Failed to parse shared link into Uri: $e",
+            materialAppKey.currentState!.overlay!, 5);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DynamicColorBuilder(builder: (lightColorScheme, darkColorScheme) {
@@ -301,21 +336,7 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
                       setState(() => hoveringWithLink = true),
                   onDropLeave: (event) =>
                       setState(() => hoveringWithLink = false),
-                  onPerformDrop: (event) async {
-                    event.session.items.first.dataReader!.getValue(Formats.uri,
-                        (value) {
-                      // Only accept http and https links
-                      if (value != null &&
-                          (value.uri.scheme == "https" ||
-                              value.uri.scheme == "http")) {
-                        logger.i("Dropped link: ${value.uri.toString()}");
-                      } else {
-                        logger.w("Dropped non-http/https link");
-                      }
-                    }, onError: (error) {
-                      logger.e("Error reading dropped link: $error");
-                    });
-                  },
+                  onPerformDrop: (event) => handleDroppedLink(event),
                   child: Stack(children: [
                     FutureBuilder<bool?>(
                         future: onboardingCompleted,
