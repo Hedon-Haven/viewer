@@ -69,7 +69,7 @@ Future<void> setDefaultSettings([forceReset = false]) async {
   await sharedStorage.setBool("general_enable_logging", false);
   await sharedStorage.setBool("general_onboarding_completed", false);
 
-  await _setOfficialPluginSettings();
+  await _setPluginProviderSettings();
   await _setAppearanceSettings();
   await _setMediaSettings();
   await _setCommentsSettings();
@@ -78,10 +78,11 @@ Future<void> setDefaultSettings([forceReset = false]) async {
   await setDefaultFilterSettings();
 }
 
-Future<void> _setOfficialPluginSettings() async {
-  await sharedStorage.setStringList("plugins_search_results", []);
+Future<void> _setPluginProviderSettings() async {
   await sharedStorage.setStringList("plugins_homepage", []);
   await sharedStorage.setStringList("plugins_search_suggestions", []);
+  await sharedStorage.setStringList("plugins_search_results", []);
+  await sharedStorage.setStringList("plugins_external_link_handler", []);
 }
 
 Future<void> _setAppearanceSettings() async {

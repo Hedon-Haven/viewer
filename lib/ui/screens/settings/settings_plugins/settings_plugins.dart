@@ -569,6 +569,14 @@ class _PluginsScreenState extends State<PluginsScreen> {
                           provides.contains(ProviderType.searchSuggestions),
                       onToggled: (newState) => _setAsProvider(plugin, provides,
                           ProviderType.searchSuggestions, newState)),
+                  OptionsSwitch(
+                      title: "External link handler",
+                      subTitle:
+                          "Use this plugin to handle links shared with the app / dropped into the app",
+                      switchState:
+                          provides.contains(ProviderType.externalLinkHandler),
+                      onToggled: (newState) => _setAsProvider(plugin, provides,
+                          ProviderType.externalLinkHandler, newState)),
                   if (!plugin.isOfficialPlugin)
                     ListTile(
                         trailing: const Icon(Icons.delete_forever,

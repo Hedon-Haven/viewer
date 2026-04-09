@@ -56,6 +56,11 @@ Future<bool> startUpgrade(String currentVersion) async {
         await purgeDatabase();
         // Update settings related to plugins
         await updatePluginSettings();
+        continue case0_6_3;
+      case0_6_3:
+      case "0.6.3":
+        // Starting v0.6.4 added external link handler provider type
+        await addExternalLinkHandlerProvider();
         break;
       default:
         logger.e("Unknown version: $currentVersion. Not changing anything");
@@ -122,4 +127,10 @@ Future<void> updatePluginSettings() async {
   await sharedStorage.remove("plugins_results");
   // delete unused key
   await sharedStorage.remove("enabled_plugins");
+}
+
+Future<void> addExternalLinkHandlerProvider() async {
+  logger.i("Upgrading to 0.6.4");
+  // Create new provider list
+  await sharedStorage.setStringList("plugins_external_link_handler", []);
 }

@@ -18,6 +18,7 @@ enum ProviderType {
   homepage,
   searchSuggestions,
   searchResults,
+  externalLinkHandler
 }
 
 typedef UpdateInfo = ({
@@ -52,6 +53,7 @@ class PluginManager {
     ProviderType.homepage: {},
     ProviderType.searchSuggestions: {},
     ProviderType.searchResults: {},
+    ProviderType.externalLinkHandler: {},
   };
 
   /// Lock-safe function to re-discover all plugins and load according to settings in sharedStorage
@@ -95,6 +97,10 @@ class PluginManager {
         ProviderType.searchResults:
             (await sharedStorage.getStringList("plugins_search_results") ?? [])
                 .toSet(),
+        ProviderType.externalLinkHandler: (await sharedStorage
+                    .getStringList("plugins_external_link_handler") ??
+                [])
+            .toSet(),
       };
       final Set<String> pluginsToEnable =
           providerSettings.values.expand((e) => e).toSet();
@@ -213,11 +219,7 @@ class PluginManager {
   static Future<void> enablePlugin(PluginInterface plugin) async {
     await _lock.synchronized(() async {
       await _enablePlugin(plugin);
-      await _setAsProvider(plugin, {
-        ProviderType.homepage,
-        ProviderType.searchSuggestions,
-        ProviderType.searchResults
-      });
+      await _setAsProvider(plugin, ProviderType.values.toSet());
       await _writeProvidersSetsToSettings();
     });
   }
@@ -385,11 +387,7 @@ class PluginManager {
         PluginInterface newPlugin =
             await _importPlugin(pluginConfig["tempPluginPath"], installedPath);
         await _enablePlugin(newPlugin);
-        await _setAsProvider(newPlugin, {
-          ProviderType.homepage,
-          ProviderType.searchSuggestions,
-          ProviderType.searchResults
-        });
+        await _setAsProvider(newPlugin, ProviderType.values.toSet());
         await _writeProvidersSetsToSettings();
       } catch (e, stacktrace) {
         await deleteDirectory(Directory(installedPath));
@@ -602,6 +600,13 @@ class PluginManager {
     await sharedStorage.setStringList(
       "plugins_search_results",
       _providers[ProviderType.searchResults]!.map((p) => p.codeName).toList()
+        ..sort(),
+    );
+    await sharedStorage.setStringList(
+      "plugins_external_link_handler",
+      _providers[ProviderType.externalLinkHandler]!
+          .map((p) => p.codeName)
+          .toList()
         ..sort(),
     );
   }
