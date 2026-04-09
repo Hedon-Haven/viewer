@@ -132,8 +132,8 @@ class _Install3rdPartyPluginScreenState
   void extractPlugin() async {
     resetProgress();
     try {
-      var selectedFile = await FilePicker.platform
-          .pickFiles(type: FileType.custom, allowedExtensions: ["zip"]);
+      var selectedFile = await FilePicker.pickFiles(
+          type: FileType.custom, allowedExtensions: ["zip"]);
       pluginConfigMap = await PluginManager.extractNewPlugin(
           selectedFile!.files.single.path!);
       configFormatted = "Name: ${pluginConfigMap!["metadata"]["prettyName"]} "
