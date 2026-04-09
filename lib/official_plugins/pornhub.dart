@@ -132,32 +132,32 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
   };
   final Map<String, String> _sortingTypeMap = {
     "Relevance": "",
-    "Upload date": "&o=mr",
-    "Views": "&o=mv",
-    "Rating": "&o=tr",
-    "Duration": "&o=lg"
+    "Upload date": "mr",
+    "Views": "mv",
+    "Rating": "tr",
+    "Duration": "lg"
   };
   final Map<String, String> _dateRangeMap = {
     "All time": "",
-    "Last year": "&t=y",
-    "Last month": "&t=m",
-    "Last week": "&t=w",
-    "Last day/Last 3 days/Latest": "&t=t"
+    "Last year": "y",
+    "Last month": "m",
+    "Last week": "w",
+    "Last day/Last 3 days/Latest": "t"
   };
   final Map<int, String> _minDurationMap = {
     0: "",
     300: "", // pornhub doesn't support 5 min -> use 0
-    600: "&min_duration=10",
-    1200: "&min_duration=20",
-    1800: "&min_duration=30",
+    600: "10",
+    1200: "20",
+    1800: "30",
     3600: ""
   };
   final Map<int, String> _maxDurationMap = {
     0: "",
     300: "", // pornhub doesn't support 5 min -> use 0
-    600: "&max_duration=10",
-    1200: "&max_duration=20",
-    1800: "&max_duration=30",
+    600: "10",
+    1200: "20",
+    1800: "30",
     3600: ""
   };
 
@@ -547,20 +547,21 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
     if (request.searchString.isEmpty) {
       return [];
     }
-    String encodedSearchString = Uri.encodeComponent(request.searchString);
     // @formatter:off
     // Pornhub does not accept redundant search parameters.
-    // For example passing &min_duration=0 will result in a 404, even though technically 0 is the default duration in the website's ui
-    // ignore: prefer_interpolation_to_compose_strings
-    String urlString = _searchEndpoint + encodedSearchString
-        + "&page=$page"
-        + _sortingTypeMap[request.sortingType]!
+    // E.g. passing &min_duration=0 will result in a 404, even though technically 0 is the default duration in the website's ui
+    String urlString = "$_searchEndpoint${Uri.encodeComponent(request.searchString)}"
+        "&page=$page"
+        "${request.sortingType != "Relevance" ? "&o=${_sortingTypeMap[request.sortingType]!}" : ""}"
         // only top rated and most views support sorting by date
-        + (request.sortingType == "Rating" || request.sortingType == "Views" ? _dateRangeMap[request.dateRange]!: "")
-        // pornhub considers 720p to be hd. No further narrowing is possible in the url
-        + (request.minQuality >= 720 ? "&hd=1" : "")
-        + _minDurationMap[request.minDuration]!
-        + _maxDurationMap[request.maxDuration]!
+        "${["Rating", "Views"].contains(request.dateRange) && request.dateRange != "All time" ? "&t=${_dateRangeMap[request.dateRange]}": ""}"
+        "${request.minQuality >= 720 ? "&hd=1" : ""}"
+        // maxQuality not supported
+        "${![600, 1200, 1800].contains(request.minDuration) ? "" : "&min_duration=${_minDurationMap[request.minDuration]!}"}"
+        "${![600, 1200, 1800].contains(request.maxDuration) ? "" : "&max_duration=${_maxDurationMap[request.maxDuration]!}"}"
+        // min and max FPS not supported
+        // virtual reality filter not supported
+        // categories and keywords not yet implemented fully
     ;
     // @formatter:on
 
