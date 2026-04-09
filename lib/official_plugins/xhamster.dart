@@ -141,7 +141,7 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
       // convert time string into int list
       Duration? duration;
       try {
-        Duration(seconds: element["duration"]);
+        duration = Duration(seconds: element["duration"]);
       } catch (_) {}
 
       authorNamePassed ??=
