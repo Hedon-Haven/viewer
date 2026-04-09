@@ -25,8 +25,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
 
     // Enable badge when plugin update check finishes and updates are available
-    pluginUpdatesAvailableEvent.stream
-        .listen((value) => setState(() => showPluginsBadge = value != 0));
+    pluginUpdatesAvailableEvent.stream.listen((value) =>
+        context.mounted ? setState(() => showPluginsBadge = value != 0) : null);
   }
 
   @override
