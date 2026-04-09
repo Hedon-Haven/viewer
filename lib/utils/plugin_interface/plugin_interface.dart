@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:html/dom.dart';
 import 'package:yaml/yaml.dart';
 
-import '/services/external_link_handler.dart';
+import '/services/external_link_manager.dart';
 import '/utils/global_vars.dart';
 import '/utils/plugin_interface/isolate_js_runtime.dart';
 import '/utils/universal_formats.dart';

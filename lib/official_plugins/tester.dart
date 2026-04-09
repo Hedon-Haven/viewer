@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:html/dom.dart';
 import 'package:image/image.dart';
 
-import '/services/external_link_handler.dart';
+import '/services/external_link_manager.dart';
 import '/utils/official_plugin.dart';
 import '/utils/plugin_interface/plugin_interface.dart';
 import '/utils/universal_formats.dart';

@@ -10,7 +10,7 @@ import 'package:secure_app_switcher/secure_app_switcher.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 
 import '/services/database_manager.dart';
-import '/services/external_link_handler.dart';
+import '/services/external_link_manager.dart';
 import '/services/icon_manager.dart';
 import '/services/plugin_manager.dart';
 import '/services/shared_prefs_manager.dart';

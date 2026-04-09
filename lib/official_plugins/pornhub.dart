@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import 'package:image/image.dart';
 
-import '/services/external_link_handler.dart';
+import '/services/external_link_manager.dart';
 import '/utils/exceptions.dart';
 import '/utils/global_vars.dart';
 import '/utils/official_plugin.dart';
