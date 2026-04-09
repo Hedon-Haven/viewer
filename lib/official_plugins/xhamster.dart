@@ -128,6 +128,39 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   final String _channelEndpoint = "https://xhamster.com/channels/";
   final String _userEndpoint = "https://xhamster.com/users/";
 
+  final Map<String, String> _sortingTypeMap = {
+    "Relevance": "relevance",
+    "Upload date": "newest",
+    "Views": "views",
+    "Rating": "best",
+    "Duration": "longest"
+  };
+  final Map<String, String> _dateRangeMap = {
+    "All time": "",
+    "Last year": "&date=yearly",
+    "Last month": "&date=monthly",
+    "Last week": "&date=weekly",
+    "Last day/Last 3 days/Latest": "&date=latest"
+  };
+  final Map<int, String> _minDurationMap = {
+    0: "",
+    300: "&min_duration=5",
+    600: "&min_duration=10",
+    // xhamster doesn't support 20 min and auto-converts it to 10
+    1200: "&min_duration=10",
+    1800: "&min_duration=30",
+    3600: ""
+  };
+  final Map<int, String> _maxDurationMap = {
+    0: "",
+    300: "&max_duration=5",
+    600: "&max_duration=10",
+    // xhamster doesn't support 20 min and auto-converts it to 10
+    1200: "&max_duration=10",
+    1800: "&max_duration=30",
+    3600: ""
+  };
+
   Future<List<UniversalVideoPreview>> _parseVideoList(
       List<Map<String, dynamic>> resultsList,
       {String? authorNamePassed,
@@ -270,10 +303,24 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   Future<List<UniversalVideoPreview>> getSearchResults(
       UniversalSearchRequest request, int page,
       [void Function(String body)? debugCallback]) async {
-    String encodedSearchString = Uri.encodeComponent(request.searchString);
-    logger.d("Requesting $_searchEndpoint$encodedSearchString?page=$page");
-    var response = await client
-        .get(Uri.parse("$_searchEndpoint$encodedSearchString?page=$page"));
+    // @formatter:off
+    String urlString = "$_searchEndpoint${Uri.encodeComponent(request.searchString)}"
+        "?page=$page"
+        "&sort=${_sortingTypeMap[request.sortingType]!}"
+        "${_dateRangeMap[request.dateRange]!}"
+        "${[720, 1080, 2160].contains(request.minQuality) ? "&quality=${request.minQuality}p" : ""}"
+        // no max quality filter
+        "${_minDurationMap[request.minDuration]!}"
+        "${_maxDurationMap[request.maxDuration]!}"
+        "${request.minFramesPerSecond > 0 ? "&fps=${request.minFramesPerSecond}" : ""}"
+        // no min FPS filter
+        "${request.virtualReality ? "&format=vr" : ""}"
+        // Categories and keywords not yet implemented
+    ;
+    // @formatter:on
+
+    logger.d("Requesting $urlString");
+    var response = await client.get(Uri.parse(urlString));
     debugCallback?.call(response.body);
     if (response.statusCode != 200) {
       logger.e(
