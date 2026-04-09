@@ -8,6 +8,7 @@ import 'package:fvp/fvp.dart' as fvp;
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:secure_app_switcher/secure_app_switcher.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '/services/database_manager.dart';
 import '/services/external_link_manager.dart';
@@ -24,6 +25,7 @@ import '/ui/screens/settings/settings_main.dart';
 import '/ui/utils/handle_desktop_events.dart';
 import '/ui/utils/toast_notification.dart';
 import '/ui/utils/update_dialog.dart';
+import '/ui/widgets/alert_dialog.dart';
 import '/utils/global_vars.dart';
 
 void main() async {
@@ -157,6 +159,31 @@ class ViewerAppState extends State<ViewerApp> with WidgetsBindingObserver {
     });
 
     performUpdate();
+
+    // Show update warning on OS that don't have update support yet
+    if (!Platform.isAndroid) {
+      // Wait for the context to be available
+      Timer.periodic(const Duration(milliseconds: 100), (timer) {
+        if (materialAppKey.currentContext != null) {
+          timer.cancel();
+          showDialog(
+              context: materialAppKey.currentContext!,
+              builder: (BuildContext context) => ThemedDialog(
+                  title: "Updates unsupported!",
+                  primaryText: "Close",
+                  onPrimary: () => Navigator.pop(context),
+                  secondaryText: "Open https://hedon-haven.top/download.html",
+                  onSecondary: () => launchUrl(
+                      Uri.parse("https://hedon-haven.top/download.html")),
+                  content: Text(
+                      "Updates are not yet supported on this OS "
+                      "(${Platform.operatingSystem}). Please check the official "
+                      "downloads page for updates.",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      textAlign: TextAlign.center)));
+        }
+      });
+    }
   }
 
   @override
