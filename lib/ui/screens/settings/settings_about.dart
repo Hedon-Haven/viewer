@@ -23,7 +23,7 @@ class _AboutScreenState extends State<AboutScreen> {
   int devSettingsCounter = 0;
 
   String returnAppType() {
-    logger.d(packageInfo.packageName);
+    logger.d("package name: ${packageInfo.packageName}");
     if (packageInfo.packageName.split(".").last == "debug") {
       return "debug";
     } else if (packageInfo.packageName.split(".").last == "viewer" &&
