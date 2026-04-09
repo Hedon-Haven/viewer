@@ -101,10 +101,10 @@ jobs:
           # zip and rename to make .ipa file
           mkdir Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -r "Hedon Haven.ipa" Payload/
+          zip -r "ios-arm64.ipa" Payload/
 
           echo "Copying IPA to release dir"
-          cp "Hedon Haven.ipa" ./release/
+          cp "ios-arm64.ipa" ./release/
 
       - name: Uploading iOS artifacts
         uses: actions/upload-artifact@v4
@@ -229,7 +229,7 @@ jobs:
             -volname "Hedon Haven" \
             -srcfolder "build/macos/Build/Products/Release/Hedon Haven.app" \
             -ov -format UDZO \
-            "./release/Hedon Haven.dmg"
+            "./release/macos-arm64.dmg"
 
       - name: Uploading macOS artifacts
         uses: actions/upload-artifact@v4
