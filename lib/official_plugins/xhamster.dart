@@ -8,6 +8,7 @@ import 'package:html_unescape/html_unescape_small.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart';
 
+import '/services/external_link_handler.dart';
 import '/utils/exceptions.dart';
 import '/utils/global_vars.dart';
 import '/utils/official_plugin.dart';
@@ -35,7 +36,13 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   String serviceUrl = "https://xhamster.com";
   @override
-  List<String> handleUrls = ["https://xhamster.com"];
+  List<String> handleUrls = [
+    "https://xhamster.com",
+    "https://xhamster.com/videos/",
+    "https://xhamster.com/creators/",
+    "https://xhamster.com/channels/",
+    "https://xhamster.com/users/"
+  ];
   @override
   int initialHomePage = 1;
   @override
@@ -249,6 +256,71 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     // as they are not imported at any time in the app
     // Also, these plugins get checked for functionality via daily CIs
     return Future.value(true);
+  }
+
+  @override
+  Future<ExternalLinkParsed> parseExternalLink(Uri uri) async {
+    logger.i("Parsing ${uri.path}");
+    switch (uri.path) {
+      case "/" || "":
+        int pageCount = initialHomePage;
+        if (uri.pathSegments.isNotEmpty) {
+          pageCount = int.parse(uri.pathSegments.last);
+        }
+        return ExternalLinkParsed(
+            type: ContentType.homePage, pageCount: pageCount);
+
+      case var path when path.startsWith('/search/'):
+        final args = uri.queryParameters;
+
+        // Reverse-lookup using search Maps
+        String sortingType = _sortingTypeMap.entries
+            .firstWhere((entry) => entry.value == args["sort"],
+                orElse: () => const MapEntry("Relevance", ""))
+            .key;
+        String dateRange = _dateRangeMap.entries
+            .firstWhere((entry) => entry.value == args["date"],
+                orElse: () => const MapEntry("All time", ""))
+            .key;
+        int minDuration = _minDurationMap.entries
+            .firstWhere((entry) => entry.value == args["min_duration"],
+                orElse: () => const MapEntry(0, ""))
+            .key;
+        int maxDuration = _maxDurationMap.entries
+            .firstWhere((entry) => entry.value == args["max_duration"],
+                orElse: () => const MapEntry(3600, ""))
+            .key;
+
+        return ExternalLinkParsed(
+          type: ContentType.searchResultsPage,
+          searchRequest: UniversalSearchRequest(
+              searchString: Uri.decodeQueryComponent(uri.pathSegments.last),
+              sortingType: sortingType,
+              dateRange: dateRange,
+              minQuality: 0,
+              // maxQuality not supported
+              minDuration: minDuration,
+              maxDuration: maxDuration,
+              virtualReality: args["format"] != null),
+          pageCount:
+              int.parse(args["page"] ?? initialSearchResultsPage.toString()),
+        );
+
+      case var path when path.startsWith('/videos/'):
+        return ExternalLinkParsed(
+          type: ContentType.videoPage,
+          iD: uri.pathSegments.last.split("-").last,
+        );
+
+      case "/creators/" || "/channels/" || "/users/":
+        return ExternalLinkParsed(
+          type: ContentType.authorPage,
+          iD: uri.pathSegments.last,
+        );
+
+      default:
+        return ExternalLinkParsed(type: ContentType.unknown);
+    }
   }
 
   @override

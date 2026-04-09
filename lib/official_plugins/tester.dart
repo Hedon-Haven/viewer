@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:html/dom.dart';
 import 'package:image/image.dart';
 
+import '/services/external_link_handler.dart';
 import '/utils/official_plugin.dart';
 import '/utils/plugin_interface/plugin_interface.dart';
 import '/utils/universal_formats.dart';
@@ -31,7 +32,12 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   String serviceUrl = "https://example.com";
   @override
-  List<String> handleUrls = ["https://example.com"];
+  List<String> handleUrls = [
+    "https://example.com/home",
+    "https://example.com/search",
+    "https://example.com/video",
+    "https://example.com/author"
+  ];
   @override
   int initialHomePage = 0;
   @override
@@ -67,6 +73,58 @@ class TesterPlugin extends OfficialPlugin implements PluginInterface {
   @override
   Future<bool> runFunctionalityTest() {
     return Future.value(true);
+  }
+
+  // To test share:
+  // https://example.com/home?page=3
+  // https://example.com/search?query=keyword&sortingType=Relevance&page=1
+  // https://example.com/video?videoId=123
+  // https://example.com/author?authorId=123
+  @override
+  Future<ExternalLinkParsed> parseExternalLink(Uri uri) async {
+    switch (uri.path) {
+      case "/home":
+        return ExternalLinkParsed(
+          type: ContentType.homePage,
+          pageCount: int.parse(
+              uri.queryParameters["page"] ?? initialHomePage.toString()),
+        );
+
+      case "/search":
+        final args = uri.queryParameters;
+        return ExternalLinkParsed(
+          type: ContentType.searchResultsPage,
+          searchRequest: UniversalSearchRequest(
+            searchString: Uri.decodeQueryComponent(args["query"] ?? ""),
+            sortingType: args["sortingType"],
+            dateRange: args["dateRange"],
+            minQuality: args["minQuality"] as int?,
+            maxQuality: args["maxQuality"] as int?,
+            minDuration: args["minDuration"] as int?,
+            maxDuration: args["maxDuration"] as int?,
+            minFramesPerSecond: args["minFramesPerSecond"] as int?,
+            maxFramesPerSecond: args["maxFramesPerSecond"] as int?,
+            virtualReality: args["virtualReality"] as bool?,
+            // categories and keywords not yet fully supported
+          ),
+          pageCount: int.parse(args["page"] ?? "0"),
+        );
+
+      case "/video":
+        return ExternalLinkParsed(
+          type: ContentType.videoPage,
+          iD: uri.queryParameters["videoId"]!,
+        );
+
+      case "/author":
+        return ExternalLinkParsed(
+          type: ContentType.authorPage,
+          iD: uri.queryParameters["authorId"]!,
+        );
+
+      default:
+        return ExternalLinkParsed(type: ContentType.unknown);
+    }
   }
 
   @override

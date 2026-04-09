@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:html/dom.dart';
 import 'package:yaml/yaml.dart';
 
+import '/services/external_link_handler.dart';
 import '/utils/global_vars.dart';
 import '/utils/plugin_interface/isolate_js_runtime.dart';
 import '/utils/universal_formats.dart';
@@ -116,7 +117,9 @@ class PluginInterface {
       updateUrl = Uri.parse(config["metadata"]["updateUrl"]);
       iconUrl = Uri.parse(config["providerData"]["iconUrl"]);
       serviceUrl = config["providerData"]["serviceUrl"];
-      handleUrls = config["providerData"]["handleUrls"];
+      handleUrls = (config["providerData"]["handleUrls"] as YamlList)
+          .map((e) => e as String)
+          .toList();
       initialHomePage = config["initialPageCounts"]["initialHomePage"];
       initialSearchResultsPage =
           config["initialPageCounts"]["initialSearchResultsPage"];
@@ -273,6 +276,22 @@ class PluginInterface {
       logger.i("Functionality test failed with: $e");
       return false;
     }
+  }
+
+  /// Parses a raw external link and returns an ExternalLinkParsed
+  Future<ExternalLinkParsed> parseExternalLink(Uri uri) async {
+    final result =
+        await _callFunction("parseExternalLink", [uri.toString()]) as Map;
+
+    UniversalSearchRequest? searchRequest = result["searchRequest"] != null
+        ? UniversalSearchRequest.fromMap(result["searchRequest"])
+        : null;
+
+    return ExternalLinkParsed(
+        type: ContentType.fromString(result["type"]),
+        iD: result["iD"],
+        searchRequest: searchRequest,
+        pageCount: result["pageCount"] as int?);
   }
 
   /// Return the homepage
