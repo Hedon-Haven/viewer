@@ -13,12 +13,15 @@ class ResultsScreen extends StatefulWidget {
   Future<List<UniversalVideoPreview>?> videoResults;
   final LoadingHandler loadingHandler;
   UniversalSearchRequest searchRequest;
+  bool openedFromExternalLink;
 
   ResultsScreen(
       {super.key,
       required this.videoResults,
       required this.searchRequest,
-      required this.loadingHandler});
+      required this.loadingHandler,
+      bool? openedFromExternalLink})
+      : openedFromExternalLink = openedFromExternalLink ?? false;
 
   @override
   State<ResultsScreen> createState() => _ResultsScreenState();
@@ -56,8 +59,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
   }
 
   void popAllScreens() {
-    // Silently remove SearchScreen from the stack (no animation)
-    Navigator.of(context).removeRouteBelow(ModalRoute.of(context)!);
+    if (!widget.openedFromExternalLink) {
+      // Silently remove SearchScreen from the stack (no animation)
+      Navigator.of(context).removeRouteBelow(ModalRoute.of(context)!);
+    }
     // Pop ResultsScreen with a single reverse animation directly to home
     Navigator.of(context).pop();
   }
@@ -65,7 +70,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-        canPop: false,
+        canPop: widget.openedFromExternalLink,
         onPopInvoked: (goingToPop) {
           if (!goingToPop) {
             popAllScreens();

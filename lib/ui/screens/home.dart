@@ -4,12 +4,19 @@ import '/services/loading_handler.dart';
 import '/services/plugin_manager.dart';
 import '/ui/screens/scraping_report.dart';
 import '/utils/global_vars.dart';
+import '/utils/plugin_interface/plugin_interface.dart';
 import '/utils/universal_formats.dart';
 import 'search.dart';
 import 'video_list.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  /// Only used to open a specific homepage from an external link
+  final PluginInterface? provider;
+
+  /// Only used when opening external links
+  final int? pageCount;
+
+  const HomeScreen({super.key, this.provider, this.pageCount});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -41,15 +48,24 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     });
 
-    sharedStorage.getBool("appearance_homepage_enabled").then((value) {
-      if (value!) {
-        videoResults = loadingHandler.getHomePages(null).whenComplete(() {
-          logger.d("ResultsIssues Map: ${loadingHandler.resultsIssues}");
-          // Update the scraping report button
-          setState(() => isLoading = false);
-        });
-      }
-    });
+    if (widget.provider != null && widget.pageCount != null) {
+      videoResults = loadingHandler
+          .getHomePages(null, [widget.provider!]).whenComplete(() {
+        logger.d("ResultsIssues Map: ${loadingHandler.resultsIssues}");
+        // Update the scraping report button
+        setState(() => isLoading = false);
+      });
+    } else {
+      sharedStorage.getBool("appearance_homepage_enabled").then((value) {
+        if (value!) {
+          videoResults = loadingHandler.getHomePages(null).whenComplete(() {
+            logger.d("ResultsIssues Map: ${loadingHandler.resultsIssues}");
+            // Update the scraping report button
+            setState(() => isLoading = false);
+          });
+        }
+      });
+    }
 
     PluginManager.getProviders(ProviderType.homepage).then((value) {
       if (value.isEmpty) {
