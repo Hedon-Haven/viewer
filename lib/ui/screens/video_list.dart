@@ -118,6 +118,8 @@ class _VideoListState extends State<VideoList> {
   VideoPlayerController previewVideoController =
       VideoPlayerController.networkUrl(Uri.parse(""));
   int? _tappedChildIndex;
+  int _previewLoopCount = 0;
+  Duration _lastPreviewPosition = Duration.zero;
   bool isLoadingResults = true;
   bool isLoadingMoreResults = false;
   bool isInternetConnected = true;
@@ -206,6 +208,23 @@ class _VideoListState extends State<VideoList> {
     previewVideoController =
         VideoPlayerController.networkUrl(videoList![index].previewVideo!);
     previewVideoController.initialize().then((value) async {
+      // To stop after looping 3 times
+      previewVideoController.addListener(() async {
+        final current = previewVideoController.value.position;
+        // Detect wrap: current is small (near zero) and last was near duration
+        if (current < const Duration(milliseconds: 100) &&
+            _lastPreviewPosition > previewVideoController.value.duration - const Duration(milliseconds: 200)) {
+          _previewLoopCount++;
+          if (_previewLoopCount >= 3) {
+            previewVideoController.setLooping(false);
+            previewVideoController.pause();
+            _previewLoopCount = 0;
+            setState(() => _tappedChildIndex = null);
+          }
+        }
+        _lastPreviewPosition = current;
+      });
+
       await previewVideoController.setVolume(0.0);
       await previewVideoController.setLooping(true);
       await previewVideoController.play();
