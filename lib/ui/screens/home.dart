@@ -46,6 +46,11 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         setState(() => isLoading = false);
       });
+      PluginManager.getProviders(ProviderType.homepage).then((value) {
+        if (value.isEmpty) {
+          setState(() => noPluginsEnabled = true);
+        }
+      });
     });
 
     if (widget.provider != null && widget.pageCount != null) {
