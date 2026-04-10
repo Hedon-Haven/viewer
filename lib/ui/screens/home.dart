@@ -39,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
           loadingHandler = LoadingHandler();
           videoResults = loadingHandler.getHomePages(null).whenComplete(() {
             logger.d("ResultsIssues Map: ${loadingHandler.resultsIssues}");
-            // Update the scraping report button
           });
         } else {
           videoResults = Future.value([]);
