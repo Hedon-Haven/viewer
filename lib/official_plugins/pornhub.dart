@@ -235,8 +235,7 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
         plugin: this,
         thumbnail: imageDiv?.querySelector("img")?.attributes["src"],
         thumbnailHttpHeaders: {
-          "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+          "User-Agent": httpUserAgent,
           "Referer": "https://www.pornhub.com/"
         },
         previewVideo:
@@ -787,8 +786,7 @@ class PornhubPlugin extends OfficialPlugin implements PluginInterface {
         iD: videoId,
         m3u8Uris: m3u8Map,
         playbackHttpHeaders: {
-          "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+          "User-Agent": httpUserAgent,
           "Referer": "https://www.pornhub.com/"
         },
         title: jscriptMap["video_title"]!,
