@@ -62,6 +62,10 @@ Future<bool> startUpgrade(String currentVersion) async {
         // Starting v0.6.4 added external link handler provider type
         await addExternalLinkHandlerProvider();
         break;
+      case "0.6.4":
+        // A small bug caused all entries since 0.6.4 to be invalid
+        await purgeDatabase();
+        break;
       default:
         logger.e("Unknown version: $currentVersion. Not changing anything");
     }
