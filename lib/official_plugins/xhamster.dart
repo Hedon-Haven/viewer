@@ -114,7 +114,7 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     },
     "testingVideos": [
       // This is an old video that uses the old progress thumbnail format
-      {"videoID": "13942649", "progressThumbnailsAmount": 1005},
+      {"videoID": "13942649", "progressThumbnailsAmount": 755},
       // This is a more recent video from the homepage
       {"videoID": "xhZiTRT", "progressThumbnailsAmount": 779}
     ],
@@ -355,8 +355,11 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
   Future<List<String>> getSearchSuggestions(String searchString,
       [void Function(String body)? debugCallback]) async {
     List<String> parsedMap = [];
-    var response = await client.get(Uri.parse(
-        "https://xhamster.com/api/front/search/suggest?searchValue=$searchString"));
+    var response = await client.get(
+        Uri.parse(
+            "https://xhamster.com/api/front/search/suggest?searchValue=$searchString"),
+        // If either of these headers is missing, the server throws a 403 for some reason
+        headers: {"x-csrf-token": "1", "Cookie": "x_csrf_token=1"});
     debugCallback?.call(response.body);
     if (response.statusCode == 200) {
       for (var item in jsonDecode(response.body).cast<Map>()) {
@@ -828,11 +831,11 @@ class XHamsterPlugin extends OfficialPlugin implements PluginInterface {
     String relatedID = jscript.substring(startIndex, startIndex + endIndex);
     logger.d("Video relatedID: $relatedID");
 
-    // Xhamster has an api
-    final suggestionsUri =
-        Uri.parse('https://xhamster.com/api/front/video/related'
-            '?params={"videoId":$relatedID,"page":$page,"nativeSpotsCount":1}');
-    print("Parsed URI: $suggestionsUri");
+    // API returns error if no parameters are passed,
+    // but doesn't actually care which parameters are passed...
+    final suggestionsUri = Uri.parse("https://xhamster.com/api/front/video/"
+        "related?videoId=$relatedID&page=$page&params={%22none%22:{}}");
+    logger.d("Parsed URI: $suggestionsUri");
     final response = await client.get(suggestionsUri);
     if (response.statusCode != 200) {
       throw Exception(
