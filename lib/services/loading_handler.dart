@@ -249,7 +249,7 @@ class LoadingHandler {
       try {
         allResults.add(await future);
       } catch (e, stacktrace) {
-        print(
+        logger.e(
             "Failed to get search suggestions from a plugin: $e\n$stacktrace");
         allResults.add(null);
       }
