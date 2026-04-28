@@ -944,6 +944,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   // If the main section was to be used for reply comments too, this would
   // necessitate keeping track of the scroll position
   Widget buildReplyCommentSection(int replyCommentIndex) {
+    if (comments?.isEmpty ?? true) return Container();
     return Container(
         decoration: BoxDecoration(
           // While surfaceVariant is deprecated, the suggested replacement
